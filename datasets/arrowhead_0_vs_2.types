@@ -1,0 +1,1016 @@
+{
+  "V1": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V2": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V3": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V4": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V5": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V6": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V7": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V8": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V9": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V10": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V11": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V12": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V13": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V14": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V15": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V16": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V17": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V18": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V19": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V20": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V21": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V22": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V23": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V24": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V25": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V26": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V27": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V28": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V29": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V30": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V31": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V32": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V33": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V34": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V35": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V36": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V37": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V38": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V39": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V40": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V41": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V42": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V43": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V44": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V45": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V46": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V47": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V48": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V49": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V50": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V51": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V52": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V53": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V54": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V55": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V56": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V57": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V58": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V59": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V60": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V61": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V62": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V63": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V64": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V65": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V66": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V67": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V68": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V69": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V70": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V71": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V72": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V73": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V74": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V75": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V76": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V77": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V78": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V79": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V80": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V81": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V82": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V83": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V84": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V85": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V86": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V87": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V88": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V89": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V90": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V91": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V92": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V93": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V94": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V95": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V96": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V97": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V98": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V99": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V100": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V101": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V102": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V103": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V104": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V105": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V106": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V107": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V108": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V109": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V110": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V111": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V112": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V113": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V114": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V115": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V116": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V117": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V118": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V119": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V120": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V121": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V122": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V123": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V124": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V125": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V126": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V127": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V128": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V129": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V130": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V131": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V132": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V133": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V134": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V135": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V136": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V137": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V138": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V139": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V140": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V141": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V142": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V143": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V144": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V145": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V146": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V147": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V148": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V149": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V150": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V151": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V152": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V153": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V154": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V155": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V156": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V157": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V158": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V159": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V160": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V161": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V162": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V163": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V164": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V165": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V166": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V167": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V168": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V169": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V170": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V171": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V172": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V173": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V174": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V175": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V176": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V177": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V178": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V179": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V180": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V181": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V182": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V183": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V184": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V185": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V186": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V187": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V188": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V189": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V190": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V191": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V192": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V193": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V194": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V195": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V196": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V197": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V198": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V199": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V200": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V201": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V202": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V203": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V204": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V205": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V206": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V207": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V208": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V209": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V210": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V211": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V212": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V213": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V214": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V215": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V216": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V217": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V218": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V219": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V220": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V221": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V222": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V223": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V224": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V225": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V226": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V227": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V228": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V229": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V230": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V231": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V232": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V233": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V234": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V235": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V236": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V237": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V238": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V239": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V240": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V241": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V242": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V243": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V244": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V245": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V246": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V247": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V248": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "V249": {
+    "type:": "NUMERICAL",
+    "encoder:": "None"
+  },
+  "label": {
+    "type:": "Classification",
+    "encoder:": "LabelEncoder",
+    "classes:": [
+      "0",
+      "1",
+      "2"
+    ],
+    "binary_conversion:": {
+      "Method": "OneVsOne",
+      "0": [
+        2
+      ],
+      "1": [
+        0
+      ]
+    }
+  }
+}
