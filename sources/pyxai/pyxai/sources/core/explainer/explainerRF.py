@@ -894,64 +894,64 @@ class ExplainerRF(Explainer):
         
     #     return merged
     def merge_chains_and_instance(self, chains_by_feature, instance, ordre_features=None):
-        """
-        Fusionne les chaînes prioritaires et les littéraux restants de l'instance,
-        en regroupant tout par caractéristique (Feature).
-        """
-        merged = []
-        print("ordre_features",ordre_features)
-        # 1. Déterminer l'ordre des features
-        if not ordre_features:
-            # Si pas d'ordre, on prend toutes les clés disponibles dans les chaînes
-            # On ajoute aussi les features présentes dans l'instance mais pas dans les chaînes (au cas où)
-            features_a_parcourir = list(chains_by_feature.keys())
-        else:
-            features_a_parcourir = list(ordre_features)
-
-        # 2. PRÉ-TRAITEMENT : Classer les littéraux de l'instance par Feature
-        # On crée un dictionnaire : {'Right-Distance': [3], 'Age': [12], ...}
-        instance_by_feature = {}
-        
-        for lit in instance:
-            # Récupération du nom de la feature via PyXAI
-            # Ex: to_features((3,)) -> ('Right-Distance > 1.5',) -> on garde 'Right-Distance'
-            feature_full_name = self.to_features((lit,))[0]
-            feature_name = feature_full_name.split()[0] # On prend le premier mot (Nom de la variable)
+            """
+            Fusionne les chaînes prioritaires et les littéraux restants de l'instance.
+            Si un ordre est donné, il est respecté en premier, puis les autres features suivent.
+            """
+            merged = []
             
-            if feature_name not in instance_by_feature:
-                instance_by_feature[feature_name] = []
-            instance_by_feature[feature_name].append(lit)
+            # 1. Déterminer la liste COMPLÈTE des features à parcourir
+            # On commence par celles imposées par l'utilisateur
+            features_prioritaires = list(ordre_features) if ordre_features else []
             
-            # Si cette feature n'est pas dans notre liste de parcours (et qu'on n'a pas d'ordre imposé), on l'ajoute
-            if not ordre_features and feature_name not in features_a_parcourir:
-                features_a_parcourir.append(feature_name)
-
-        # print(f"Features à parcourir : {features_a_parcourir}")
-
-        # 3. BOUCLE PRINCIPALE : Fusion feature par feature
-        for feature in features_a_parcourir:
+            # On identifie toutes les features disponibles (clés du dictionnaire)
+            toutes_les_features = list(chains_by_feature.keys())
             
-            # A. D'abord, on ajoute la chaîne prioritaire (les négatifs/complexes)
-            if feature in chains_by_feature:
-                chain = chains_by_feature[feature]
-                for lit in chain:
-                    if lit not in merged:
-                        merged.append(lit)
+            # On ajoute celles qui manquent (qui ne sont pas dans l'ordre imposé)
+            autres_features = [f for f in toutes_les_features if f not in features_prioritaires]
             
-            # B. ENSUITE, on ajoute immédiatement les orphelins de cette feature (ex: le 3)
-            if feature in instance_by_feature:
-                orphans = instance_by_feature[feature]
-                for lit in orphans:
-                    if lit not in merged:
-                        # print(f"-> Ajout du littéral orphelin {lit} directement après sa feature {feature}")
-                        merged.append(lit)
+            # Liste finale : D'abord les imposées, puis le reste
+            features_a_parcourir = features_prioritaires + autres_features
 
-        # 4. FILET DE SÉCURITÉ (Au cas où un littéral n'aurait pas été classé correctement)
-        for lit in instance:
-            if lit not in merged:
-                merged.append(lit)
+            # 2. PRÉ-TRAITEMENT : Classer les littéraux de l'instance par Feature
+            instance_by_feature = {}
+            for lit in instance:
+                feature_full_name = self.to_features((lit,))[0]
+                feature_name = feature_full_name.split()[0]
                 
-        return merged
+                if feature_name not in instance_by_feature:
+                    instance_by_feature[feature_name] = []
+                instance_by_feature[feature_name].append(lit)
+                
+                # Si une feature est dans l'instance mais n'était pas dans chains_by_feature, on l'ajoute à la fin
+                if feature_name not in features_a_parcourir:
+                    features_a_parcourir.append(feature_name)
+
+            print(f"Ordre final de parcours : {features_a_parcourir}")
+
+            # 3. BOUCLE PRINCIPALE : Fusion feature par feature
+            for feature in features_a_parcourir:
+                
+                # A. Chaînes prioritaires (complexes/négatifs)
+                if feature in chains_by_feature:
+                    chain = chains_by_feature[feature]
+                    for lit in chain:
+                        if lit not in merged:
+                            merged.append(lit)
+                
+                # B. Orphelins de l'instance (positifs/restants)
+                if feature in instance_by_feature:
+                    orphans = instance_by_feature[feature]
+                    for lit in orphans:
+                        if lit not in merged:
+                            merged.append(lit)
+
+            # 4. FILET DE SÉCURITÉ
+            for lit in instance:
+                if lit not in merged:
+                    merged.append(lit)
+                    
+            return merged
     def sufficient_reason_single_strategy(self, *, n=1, strategy="priority_order", random_seed=42, ordre_features=None):
         """
         Extrait plusieurs explications (AXp) avec une stratégie donnée.
