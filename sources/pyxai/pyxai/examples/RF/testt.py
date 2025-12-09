@@ -12,7 +12,7 @@ print("instancee",instance)
 explainer = Explainer.initialize(model, instance,features_type=dataset_name + '.types')
 
 reason =explainer.sufficient_reason()
-#ordre_features=[ 'mcv', 'sgpt', 'sgot', 'alkphos', 'gammagt']
+# ordre_features=[ 'mcv', 'sgpt', 'sgot', 'alkphos', 'gammagt']
 ordre_features=[]
 # ordre_features=[ 'mcv']
 #ordre_features=['Right-Distance', 'Left-Weight', 'Left-Distance', 'Right-Weight']
