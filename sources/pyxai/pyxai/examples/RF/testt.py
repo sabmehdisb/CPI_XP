@@ -5,13 +5,13 @@ import pandas as pd
 dataset_name=Tools.Options.dataset
 df = pd.read_csv(dataset_name + '.csv')
 learner = Learning.Scikitlearn(dataset_name+ '.csv', learner_type=Learning.CLASSIFICATION)
-model = learner.evaluate(method=Learning.HOLD_OUT, output=Learning.DT)
+model = learner.evaluate(method=Learning.HOLD_OUT, output=Learning.RF,n_estimators=4)
 instance, prediction = learner.get_instances(model, n=1, correct=True)
 print("instancee",instance)
 # instance=[0,0,0,1,0,0,0,0,1,0,0]
 explainer = Explainer.initialize(model, instance,features_type=dataset_name + '.types')
 
-reason =explainer.sufficient_reason(n=1)
+reason =explainer.sufficient_reason()
 # ordre_features=[ 'mcv', 'sgpt', 'sgot', 'alkphos', 'gammagt']
 ordre_features=[]
 # ordre_features=[ 'mcv']
