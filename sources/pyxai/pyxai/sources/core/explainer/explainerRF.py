@@ -760,567 +760,564 @@ class ExplainerRF(Explainer):
         Tools.verbose("--------------")
 
         return self._random_forest
-    def get_suppression_order2(self, instance, th, strategy="priority_order", seed=None,ordre_features=None):
+    def get_suppression_order2(self, instance, th, strategy="priority_order", seed=None, ordre_features=None):
         """
-        Retourne l'ordre de suppression selon la stratégie choisie
-        
+        Returns the suppression order according to the chosen strategy.
+
         Args:
-            instance: Liste des littéraux
-            th: Théorie (clauses)
-            strategy: Stratégie de suppression à utiliser
-            seed: Graine pour la stratégie aléatoire (optionnel)
-        
+            instance: List of literals
+            th: Theory (clauses)
+            strategy: Suppression strategy to use
+            seed: Seed for random strategy (optional)
+
         Returns:
-            Liste ordonnée des littéraux selon la stratégie
+            Ordered list of literals according to the strategy
         """
-        print("ordre_features",ordre_features)
-        # if strategy == "priority_order":
-        #     return self.get_priority_order(instance, th)
+        print("ordre_features", ordre_features)
         if strategy == "priority_order":
-                chains_by_feature=self.get_feature_chain_lists_with_positive_first(th,instance)
-                print("chains_by_feature",chains_by_feature)
-                priorityfeatures=self.merge_chains_and_instance2(chains_by_feature,instance,ordre_features=ordre_features)
-                print("priorityfeatures",priorityfeatures)
-                #exit(0)
-#                 print("to_feature",self.to_features((-10,)
-# ))
-#                 exit(0)
+                chains_by_feature = self.get_feature_chain_lists_with_positive_first(th, instance)
+                priorityfeatures = self.merge_chains_and_instance2(
+                    chains_by_feature, instance, ordre_features=ordre_features
+                )
                 return priorityfeatures
 
         elif strategy == "beginning_to_end":
-            # Suppression du début à la fin (ordre original)
+            # Suppression from beginning to end (original order)
             return list(instance)
-        
+
         else:
-            raise ValueError(f"Stratégie inconnue: {strategy}")
+            raise ValueError(f"Unknown strategy: {strategy}")
+
     def merge_chains_and_instance2(self, chains_by_feature, instance, ordre_features=None):
-            """
-            Fusionne les chaînes prioritaires et les littéraux restants de l'instance.
-            Si un ordre est donné, il est respecté en premier, puis les autres features suivent.
-            """
-            merged = []
-            
-            # 1. Déterminer la liste COMPLÈTE des features à parcourir
-            # On commence par celles imposées par l'utilisateur
-            features_prioritaires = list(ordre_features) if ordre_features else []
-            
-            # On identifie toutes les features disponibles (clés du dictionnaire)
-            toutes_les_features = list(chains_by_feature.keys())
-            
-            # On ajoute celles qui manquent (qui ne sont pas dans l'ordre imposé)
-            autres_features = [f for f in toutes_les_features if f not in features_prioritaires]
-            
-            # Liste finale : D'abord les imposées, puis le reste
-            features_a_parcourir = features_prioritaires + autres_features
+                """
+                Merges priority chains and remaining instance literals.
+                If an order is provided, it is respected first, then remaining features follow.
+                """
+                merged = []
 
-            # 2. PRÉ-TRAITEMENT : Classer les littéraux de l'instance par Feature
-            instance_by_feature = {}
-            for lit in instance:
-                feature_full_name = self.to_features((lit,))[0]
-                feature_name = feature_full_name.split()[0]
-                
-                if feature_name not in instance_by_feature:
-                    instance_by_feature[feature_name] = []
-                instance_by_feature[feature_name].append(lit)
-                
-                # Si une feature est dans l'instance mais n'était pas dans chains_by_feature, on l'ajoute à la fin
-                if feature_name not in features_a_parcourir:
-                    features_a_parcourir.append(feature_name)
+                # 1. Determine the COMPLETE list of features to iterate over
+                # Start with user-imposed features
+                features_prioritaires = list(ordre_features) if ordre_features else []
 
-            print(f"Ordre final de parcours : {features_a_parcourir}")
+                # Identify all available features (dictionary keys)
+                toutes_les_features = list(chains_by_feature.keys())
 
-            # 3. BOUCLE PRINCIPALE : Fusion feature par feature
-            for feature in features_a_parcourir:
-                
-                # A. Chaînes prioritaires (complexes/négatifs)
-                if feature in chains_by_feature:
-                    chain = chains_by_feature[feature]
-                    for lit in chain:
-                        if lit not in merged:
-                            merged.append(lit)
-                
-                # B. Orphelins de l'instance (positifs/restants)
-                if feature in instance_by_feature:
-                    orphans = instance_by_feature[feature]
-                    for lit in orphans:
-                        if lit not in merged:
-                            merged.append(lit)
+                # Add missing ones (not in the imposed order)
+                autres_features = [f for f in toutes_les_features if f not in features_prioritaires]
 
-            # 4. FILET DE SÉCURITÉ
-            for lit in instance:
-                if lit not in merged:
-                    merged.append(lit)
-                    
-            return merged
+                # Final list: imposed ones first, then the rest
+                features_a_parcourir = features_prioritaires + autres_features
+
+                # 2. PRE-PROCESSING: Group instance literals by feature
+                instance_by_feature = {}
+                for lit in instance:
+                    feature_full_name = self.to_features((lit,))[0]
+                    feature_name = feature_full_name.split()[0]
+
+                    if feature_name not in instance_by_feature:
+                        instance_by_feature[feature_name] = []
+                    instance_by_feature[feature_name].append(lit)
+
+                    # If a feature is in the instance but not in chains_by_feature, add it at the end
+                    if feature_name not in features_a_parcourir:
+                        features_a_parcourir.append(feature_name)
+
+                # 3. MAIN LOOP: Merge feature by feature
+                for feature in features_a_parcourir:
+
+                    # A. Priority chains (complex / negative)
+                    if feature in chains_by_feature:
+                        chain = chains_by_feature[feature]
+                        for lit in chain:
+                            if lit not in merged:
+                                merged.append(lit)
+
+                    # B. Instance orphans (positive / remaining)
+                    if feature in instance_by_feature:
+                        orphans = instance_by_feature[feature]
+                        for lit in orphans:
+                            if lit not in merged:
+                                merged.append(lit)
+
+                # 4. SAFETY NET
+                for lit in instance:
+                    if lit not in merged:
+                        merged.append(lit)
+
+                return merged
+
     def m_cpi_xp2(self, *, n=1, strategy="priority_order", random_seed=42, ordre_features=None):
-        """
-        Méthode manuelle optimisée pour Random Forest (RF) et Decision Tree (DT).
-        Utilise la preuve par l'absurde (UNSAT) pour valider l'explication.
-        """
-        # 1. Préparation de la structure logique (Théorie + Structure du Modèle)
-        # On récupère la théorie (ex: One-Hot encoding des features)
-        theory_clauses = list(self.get_theory())
-        
-        # 2. On génère la CNF qui représente "Le modèle prédit l'INVERSE de la cible"
-        # C'est crucial : Encoding.MUS crée les contraintes pour (Prédiction != Cible)
-        if self._random_forest.n_classes == 2:
-            inverse_model_cnf = self._random_forest.to_CNF(
-                self._instance, 
-                self._binary_representation,
-                self.target_prediction, 
-                tree_encoding=Encoding.MUS
-            )
-        else:
-            # Gestion multi-classes
-            inverse_model_cnf = self._random_forest.to_CNF_sufficient_reason_multi_classes(
-                self._instance,
-                self._binary_representation,
-                self.target_prediction
-            )
-        
-        # On combine tout : Théorie + (Modèle != Cible)
-        # Ce bloc représente "Le monde impossible" qu'on veut contredire
-        hard_clauses = theory_clauses + list(inverse_model_cnf)
+            """
+            Optimized manual method for Random Forest (RF) and Decision Tree (DT).
+            Uses proof by contradiction (UNSAT) to validate explanations.
+            """
+            # 1. Preparation of the logical structure (Theory + Model Structure)
+            # Retrieve the theory (e.g., One-Hot encoding of features)
+            theory_clauses = list(self.get_theory())
 
-        # 3. Initialisation des variables de boucle
-        if strategy == "priority_order" and not ordre_features:
-            ordre_features = None
-
-        all_explanations = []
-        k = 0
-        attempts = 0
-        max_retries = n * 5
-
-        while k < n and attempts < max_retries:
-            attempts += 1
-            print(f"\n{'='*50}")
-            print(f"RECHERCHE EXPLICATION {k+1}/{n} (Tentative {attempts})")
-            
-            # Instance de départ (Toute l'instance)
-            current_instance = list(self._binary_representation)
-            
-            # Gestion de l'aléatoire pour varier les explications
-            current_seed = (random_seed + attempts) if random_seed is not None else None
-            
-            # Ordre de suppression
-            suppression_order = self.get_suppression_order2(
-                current_instance, theory_clauses, strategy, 
-                seed=current_seed,
-                ordre_features=ordre_features
-            )
-
-            # === BOUCLE GLOUTONNE (MANUELLE ET OPTIMISÉE) ===
-            for literal_to_test in suppression_order:
-                if literal_to_test not in current_instance:
-                    continue
-                
-                # On tente d'enlever le littéral
-                temp_instance = [lit for lit in current_instance if lit != literal_to_test]
-                
-                # --- VÉRIFICATION SAT ---
-                # Question : Est-ce que (hard_clauses ET temp_instance) est UNSAT ?
-                # Si UNSAT -> Impossible de prédire autre chose -> Explication Valide.
-                
-                solver = Glucose3()
-                
-                # A. Ajouter le monde "Impossible" (Théorie + Inverse Modèle)
-                for clause in hard_clauses:
-                    solver.add_clause(list(clause))
-                
-                # B. Ajouter notre candidat explication (ce qu'on a gardé)
-                for lit in temp_instance:
-                    solver.add_clause([lit])
-                
-                # C. Résolution
-                is_sat = solver.solve()
-                solver.delete()
-
-                if is_sat == False: 
-                    # UNSAT ! Victoire !
-                    # Cela signifie qu'avec 'temp_instance', le modèle ne PEUT PAS se tromper.
-                    # Le littéral testé était donc inutile.
-                    current_instance.remove(literal_to_test)
-                    print(f"✓ Supprimé : {literal_to_test}")
-                else:
-                    # SAT. Échec.
-                    # Le solveur a trouvé un cas où l'instance est respectée MAIS le modèle prédit l'inverse.
-                    # Donc ce littéral était nécessaire pour bloquer ce contre-exemple.
-                    # print(f"✗ Nécessaire : {literal_to_test}")
-                    pass
-
-            # === FIN DE L'ITÉRATION ===
-            final_explanation = tuple(sorted(current_instance))
-            
-            if final_explanation not in all_explanations:
-                all_explanations.append(final_explanation)
-                print(f"\n>>> SUCCÈS : Explication trouvée : {final_explanation}")
-                print(f">>> Taille : {len(final_explanation)}")
-                k += 1
+            # 2. Generate the CNF representing "The model predicts the OPPOSITE of the target"
+            # This is crucial: Encoding.MUS creates constraints for (Prediction != Target)
+            if self._random_forest.n_classes == 2:
+                inverse_model_cnf = self._random_forest.to_CNF(
+                    self._instance,
+                    self._binary_representation,
+                    self.target_prediction,
+                    tree_encoding=Encoding.MUS
+                )
             else:
-                print("⚠ Doublon trouvé, nouvel essai...")
+                # Multi-class handling
+                inverse_model_cnf = self._random_forest.to_CNF_sufficient_reason_multi_classes(
+                    self._instance,
+                    self._binary_representation,
+                    self.target_prediction
+                )
 
-        return all_explanations
+            # Combine everything: Theory + (Model != Target)
+            # This block represents the "Impossible world" we want to contradict
+            hard_clauses = theory_clauses + list(inverse_model_cnf)
 
-    def get_suppression_order(self, instance, th, strategy="priority_order", seed=None,ordre_features=None):
+            # 3. Loop variable initialization
+            if strategy == "priority_order" and not ordre_features:
+                ordre_features = None
+
+            all_explanations = []
+            k = 0
+            attempts = 0
+            max_retries = n * 5
+
+            while k < n and attempts < max_retries:
+                attempts += 1
+                # Initial instance (full instance)
+                current_instance = list(self._binary_representation)
+
+                # Random handling to diversify explanations
+                current_seed = (random_seed + attempts) if random_seed is not None else None
+
+                # Suppression order
+                suppression_order = self.get_suppression_order2(
+                    current_instance, theory_clauses, strategy,
+                    seed=current_seed,
+                    ordre_features=ordre_features
+                )
+
+                # === GREEDY LOOP (MANUAL AND OPTIMIZED) ===
+                for literal_to_test in suppression_order:
+                    if literal_to_test not in current_instance:
+                        continue
+
+                    # Attempt to remove the literal
+                    temp_instance = [lit for lit in current_instance if lit != literal_to_test]
+
+                    # --- SAT CHECK ---
+                    # Question: Is (hard_clauses AND temp_instance) UNSAT?
+                    # If UNSAT -> Impossible to predict something else -> Valid explanation.
+
+                    solver = Glucose3()
+
+                    # A. Add the "Impossible world" (Theory + Inverse Model)
+                    for clause in hard_clauses:
+                        solver.add_clause(list(clause))
+
+                    # B. Add the candidate explanation (what we kept)
+                    for lit in temp_instance:
+                        solver.add_clause([lit])
+
+                    # C. Solve
+                    is_sat = solver.solve()
+                    solver.delete()
+
+                    if is_sat == False:
+                        # UNSAT! Victory!
+                        # This means that with 'temp_instance', the model CANNOT be wrong.
+                        # The tested literal was therefore unnecessary.
+                        current_instance.remove(literal_to_test)
+                    else:
+                        # SAT. Failure.
+                        # The solver found a case where the instance is satisfied
+                        # BUT the model predicts the opposite.
+                        # Therefore, this literal was necessary to block that counter-example.
+                        # print(f" Necessary: {literal_to_test}")
+                        pass
+
+                # === END OF ITERATION ===
+                final_explanation = tuple(sorted(current_instance))
+
+                if final_explanation not in all_explanations:
+                    all_explanations.append(final_explanation)
+                    k += 1
+                else:
+                    print("⚠ Duplicate found, retrying...")
+
+            return all_explanations
+
+    def get_suppression_order(self, instance, th, strategy="priority_order", seed=None, ordre_features=None):
         """
-        Retourne l'ordre de suppression selon la stratégie choisie
-        
+        Returns the suppression order according to the chosen strategy.
+
         Args:
-            instance: Liste des littéraux
-            th: Théorie (clauses)
-            strategy: Stratégie de suppression à utiliser
-            seed: Graine pour la stratégie aléatoire (optionnel)
-        
+            instance: List of literals
+            th: Theory (clauses)
+            strategy: Suppression strategy to use
+            seed: Seed for the random strategy (optional)
+
         Returns:
-            Liste ordonnée des littéraux selon la stratégie
+            Ordered list of literals according to the strategy
         """
-        print("ordre_features",ordre_features)
-        # if strategy == "priority_order":
-        #     return self.get_priority_order(instance, th)
         if strategy == "priority_order":
-                chains_by_feature=self.get_feature_chain_lists_with_positive_first(th,instance)
-                print("chains_by_feature",chains_by_feature)
-                priorityfeatures=self.merge_chains_and_instance(chains_by_feature,instance,ordre_features=ordre_features)
-                print("priorityfeatures",priorityfeatures)
-                #exit(0)
-#                 print("to_feature",self.to_features((-10,)
-# ))
-#                 exit(0)
+                chains_by_feature = self.get_feature_chain_lists_with_positive_first(th, instance)
+                priorityfeatures = self.merge_chains_and_instance(
+                    chains_by_feature, instance, ordre_features=ordre_features
+                )
                 return priorityfeatures
 
         elif strategy == "beginning_to_end":
-            # Suppression du début à la fin (ordre original)
+            # Suppression from beginning to end (original order)
             return list(instance)
-        
+
         elif strategy == "end_to_beginning":
-            # Suppression de la fin au début (ordre inverse)
+            # Suppression from end to beginning (reverse order)
             return list(reversed(instance))
-        
+
         elif strategy == "random":
-            # Suppression aléatoire
+            # Random suppression
             random_order = list(instance)
             if seed is not None:
                 random.seed(seed)
             random.shuffle(random_order)
             return random_order
-        
-        else:
-            raise ValueError(f"Stratégie inconnue: {strategy}")
 
+        else:
+            raise ValueError(f"Unknown strategy: {strategy}")
 
 
     def get_feature_chain_lists_with_positive_first(self, th, instance):
-        """
-        Pour chaque feature, construit d'abord la chaîne standard,
-        puis réordonne pour mettre les positifs inversés en tête.
-        """
-        # 1) Regroupement exact comme avant
-        feature_groups = {}
-        print("th", th)
-        for a, b in th:
-            cond = self.to_features((a,))[0].split()[0]
-            feature_groups.setdefault(cond, []).append((a, b))
-        print("feature_groups", feature_groups)
-        
-        result = {}
-        for feature, clauses in feature_groups.items():
-            chain = []
-            # Parcourir toutes les clauses
-            for a, b in reversed(clauses):
-                # Vérifier la condition XOR : exactement UN des deux littéraux dans l'instance
-                a_in = a in instance
-                b_in = b in instance
-                #print("a_in",a)
-                #print("b_in",b)
-                # XOR: (a dans instance ET b pas dans instance) OU (b dans instance ET a pas dans instance)
-                if (a_in and not b_in):
-                    # a est dans l'instance, on ajoute a et -b
-                    if -b not in chain:
-                        chain.append(-b)
-                    if a not in chain:
-                        chain.append(a)
-                    #print("chain",chain)
-                elif (b_in and not a_in):
-                    # b est dans l'instance, on ajoute b et -a
-                    if b not in chain:
-                        chain.append(b)
-                    if -a not in chain:
-                        chain.append(-a)
-                    #print("chain",chain)
-                # Sinon, on passe au suivant (continue implicite)
-            
-            # 2) on réapplique l'ordre désiré
-            if chain:  # Seulement si la chaîne n'est pas vide
-                result[feature] = self.reorder_chain(chain)
-                #print("result[feature]", result[feature])
-        
-        return result
-    def reorder_chain(self,chain):
-        """
-        Donne une nouvelle chaîne où :
-        - on prend d'abord les positifs, inversés
-        - puis on ajoute les négatifs, dans l'ordre original
-        """
-        positives = [x for x in chain if x > 0]
-        negatives = [x for x in chain if x < 0]
-        positives.reverse()
-        return positives + negatives
+            """
+            For each feature, first builds the standard chain,
+            then reorders it to put inverted positives first.
+            """
+            # 1) Exact grouping as before
+            feature_groups = {}
+            for a, b in th:
+                cond = self.to_features((a,))[0].split()[0]
+                feature_groups.setdefault(cond, []).append((a, b))
+            result = {}
+            for feature, clauses in feature_groups.items():
+                chain = []
+                # Iterate over all clauses
+                for a, b in reversed(clauses):
+                    # Check XOR condition: exactly ONE of the two literals is in the instance
+                    a_in = a in instance
+                    b_in = b in instance
+                    # XOR: (a in instance AND b not in instance) OR (b in instance AND a not in instance)
+                    if (a_in and not b_in):
+                        # a is in the instance, add a and -b
+                        if -b not in chain:
+                            chain.append(-b)
+                        if a not in chain:
+                            chain.append(a)
+                    elif (b_in and not a_in):
+                        # b is in the instance, add b and -a
+                        if b not in chain:
+                            chain.append(b)
+                        if -a not in chain:
+                            chain.append(-a)
+                    # Otherwise, skip (implicit continue)
+
+                # 2) Reapply the desired order
+                if chain:  # Only if the chain is not empty
+                    result[feature] = self.reorder_chain(chain)
+
+            return result
+
+    def reorder_chain(self, chain):
+            """
+            Produces a new chain where:
+            - positives are taken first, reversed
+            - then negatives are added, in original order
+            """
+            positives = [x for x in chain if x > 0]
+            negatives = [x for x in chain if x < 0]
+            positives.reverse()
+            return positives + negatives
+
     def merge_chains_and_instance(self, chains_by_feature, instance, ordre_features=None):
-        """
-        Retourne une liste de listes. Chaque sous-liste contient les littéraux d'une feature.
-        Exemple : [[-3, -19...], [-12, -18...]]
-        """
-        grouped_features = []
-        
-        # 1. Déterminer la liste COMPLÈTE des features à parcourir
-        features_prioritaires = list(ordre_features) if ordre_features else []
-        toutes_les_features = list(chains_by_feature.keys())
-        autres_features = [f for f in toutes_les_features if f not in features_prioritaires]
-        
-        features_a_parcourir = features_prioritaires + autres_features
+            """
+            Returns a list of lists. Each sub-list contains the literals of one feature.
+            Example: [[-3, -19...], [-12, -18...]]
+            """
+            grouped_features = []
 
-        # 2. PRÉ-TRAITEMENT : Classer les littéraux de l'instance par Feature
-        instance_by_feature = {}
-        for lit in instance:
-            feature_full_name = self.to_features((lit,))[0]
-            feature_name = feature_full_name.split()[0]
-            
-            if feature_name not in instance_by_feature:
-                instance_by_feature[feature_name] = []
-            instance_by_feature[feature_name].append(lit)
-            
-            if feature_name not in features_a_parcourir:
-                features_a_parcourir.append(feature_name)
+            # 1. Determine the COMPLETE list of features to iterate over
+            features_prioritaires = list(ordre_features) if ordre_features else []
+            toutes_les_features = list(chains_by_feature.keys())
+            autres_features = [f for f in toutes_les_features if f not in features_prioritaires]
 
-        print(f"Ordre final de parcours : {features_a_parcourir}")
+            features_a_parcourir = features_prioritaires + autres_features
 
-        # 3. BOUCLE PRINCIPALE : Construction des groupes
-        processed_literals = set()
+            # 2. PRE-PROCESSING: Group instance literals by feature
+            instance_by_feature = {}
+            for lit in instance:
+                feature_full_name = self.to_features((lit,))[0]
+                feature_name = feature_full_name.split()[0]
 
-        for feature in features_a_parcourir:
-            current_group = []
-            
-            # A. Chaînes prioritaires
-            if feature in chains_by_feature:
-                chain = chains_by_feature[feature]
-                for lit in chain:
-                    if lit not in processed_literals and lit in instance: # Vérifier qu'il est dans l'instance
-                        current_group.append(lit)
-                        processed_literals.add(lit)
-            
-            # B. Orphelins de l'instance pour cette feature
-            if feature in instance_by_feature:
-                orphans = instance_by_feature[feature]
-                for lit in orphans:
-                    if lit not in processed_literals:
-                        current_group.append(lit)
-                        processed_literals.add(lit)
-            
-            # On ajoute le groupe s'il n'est pas vide
-            if current_group:
-                grouped_features.append(current_group)
+                if feature_name not in instance_by_feature:
+                    instance_by_feature[feature_name] = []
+                instance_by_feature[feature_name].append(lit)
 
-        # 4. FILET DE SÉCURITÉ (Pour les littéraux qui n'auraient pas de feature identifiée)
-        leftovers = []
-        for lit in instance:
-            if lit not in processed_literals:
-                leftovers.append(lit)
-        
-        if leftovers:
-            grouped_features.append(leftovers)
-                
-        return grouped_features
+                if feature_name not in features_a_parcourir:
+                    features_a_parcourir.append(feature_name)
+
+            # 3. MAIN LOOP: Build the groups
+            processed_literals = set()
+
+            for feature in features_a_parcourir:
+                current_group = []
+
+                # A. Priority chains
+                if feature in chains_by_feature:
+                    chain = chains_by_feature[feature]
+                    for lit in chain:
+                        if lit not in processed_literals and lit in instance:
+                            current_group.append(lit)
+                            processed_literals.add(lit)
+
+                # B. Instance orphans for this feature
+                if feature in instance_by_feature:
+                    orphans = instance_by_feature[feature]
+                    for lit in orphans:
+                        if lit not in processed_literals:
+                            current_group.append(lit)
+                            processed_literals.add(lit)
+
+                # Add the group if it is not empty
+                if current_group:
+                    grouped_features.append(current_group)
+
+            # 4. SAFETY NET (for literals without an identified feature)
+            leftovers = []
+            for lit in instance:
+                if lit not in processed_literals:
+                    leftovers.append(lit)
+
+            if leftovers:
+                grouped_features.append(leftovers)
+
+            return grouped_features
+
     def to_CNF(self):
-        return self._random_forest.to_CNF(self._instance, self._binary_representation,
-                                                      self.target_prediction, tree_encoding=Encoding.SIMPLE)
+            return self._random_forest.to_CNF(
+                self._instance,
+                self._binary_representation,
+                self.target_prediction,
+                tree_encoding=Encoding.SIMPLE
+            )
+
     def cpi_xp(self, *, n=1, strategy="priority_order", random_seed=42, ordre_features=None):
         """
-        [cite_start]Implémentation fidèle de l'Algorithme 1 (CPI-Xp)[cite: 173].
-        Intègre une optimisation "Symmetric Safe Jump" pour les numériques :
-        Permet de sauter des Positifs aux Négatifs ET inversement en cas de blocage.
+        Faithful implementation of Algorithm 1 (CPI-Xp).
+
+        TECHNICAL FIX:
+        The solver is initialized ONLY ONCE here and passed to the imp() function.
+        This preserves the algorithm structure while avoiding crashes
+        (Segmentation Fault).
         """
-        # --- Initialisation (Correspond aux lignes 1-5 de l'Algo 1) ---
+
+        # --- Initialization (Corresponds to lines 1–5 of Algorithm 1) ---
         theory_clauses = list(self.get_theory())
-        
+
         if self._random_forest.n_classes == 2:
             inverse_model_cnf = self._random_forest.to_CNF(
-                self._instance, self._binary_representation, self.target_prediction, tree_encoding=Encoding.MUS
+                self._instance,
+                self._binary_representation,
+                self.target_prediction,
+                tree_encoding=Encoding.MUS
             )
         else:
             inverse_model_cnf = self._random_forest.to_CNF_sufficient_reason_multi_classes(
-                self._instance, self._binary_representation, self.target_prediction
+                self._instance,
+                self._binary_representation,
+                self.target_prediction
             )
-        
+
         hard_clauses = theory_clauses + list(inverse_model_cnf)
 
-        # Ligne 6: t <- tx
-        current_instance = list(self._binary_representation)
-        features_groups = self.get_suppression_order(
-            current_instance, theory_clauses, strategy="priority_order", 
-            seed=None, ordre_features=ordre_features
-        )
-        
-        # Ligne 7: cx <- ensemble vide
-        cx = [] 
-        
-        remaining_features_map = {i: group for i, group in enumerate(features_groups)}
+        # === PERSISTENT SOLVER INITIALIZATION ===
+        # Created here to avoid recreating it thousands of times inside imp()
+        with Glucose3() as solver:
+            # Load the "hard" rules once and for all
+            for clause in hard_clauses:
+                solver.add_clause(list(clause))
 
-        # === Ligne 8: for each Ai in A do ===
-        for i, t_prime in enumerate(features_groups): 
-            
-            # --- Détection du Type ---
-            feature_type = "categorical"
-            if t_prime:
-                first_lit = t_prime[0]
-                feature_str = self.to_features((first_lit,))[0]
-                if ("in ]" in feature_str or "in [" in feature_str) or \
-                   any(op in feature_str for op in ['<', '>', '<=', '>=']):
-                    feature_type = "numeric"
+            # Line 6: t <- tx
+            current_instance = list(self._binary_representation)
+            features_groups = self.get_suppression_order(
+                current_instance, theory_clauses, strategy="priority_order",
+                seed=None, ordre_features=ordre_features
+            )
 
-            # === Ligne 9: while true do ===
-            while True:
-                # Ligne 10-11: if t' is empty then exit-while
-                if not t_prime:
-                    break
+            # Line 7: cx <- empty set
+            cx = []
 
-                found = False # Ligne 13
-                
-                # Ligne 14: gs <- msg(t', Sigma)
-                gs = self.msg(t_prime, feature_type)
+            remaining_features_map = {i: group for i, group in enumerate(features_groups)}
 
-                # Ligne 16: for each g in gs do
-                for g in gs:
-                    hypothesis = list(cx) + list(g)
-                    for j in range(i + 1, len(features_groups)):
-                        hypothesis.extend(remaining_features_map[j])
+            # === Line 8: for each Ai in A do ===
+            for i, t_prime in enumerate(features_groups):
 
-                    # Ligne 18: if imp(...) then
-                    if self.imp(hypothesis, hard_clauses):
-                        t_prime = g     # Ligne 19
-                        found = True    # Ligne 20
-                        break           # Ligne 21
-                
-                # Ligne 23: if not found then
-                if not found:
-                    
-                    # --- OPTIMISATION : SYMMETRIC SAFE JUMP ---
-                    if feature_type == "numeric":
-                        failed_literal = t_prime[0]
-                        
-                        # CAS 1 : Bloqué sur un POSITIF -> Chercher des Négatifs
-                        if failed_literal > 0:
-                            # Y a-t-il des négatifs dans ce qui reste ?
-                            pending_opposite = [x for x in t_prime if x < 0]
-                            
-                            if pending_opposite:
-                                # On sauvegarde TOUS les positifs restants (Safe Keep)
-                                remaining_same_sign = [x for x in t_prime if x > 0]
-                                cx.extend(remaining_same_sign)
-                                
-                                # On bascule sur les négatifs
-                                t_prime = pending_opposite
-                                # print(f"-> Jump: Positifs gardés, passage aux Négatifs.")
-                                continue 
+                # --- Feature Type Detection ---
+                feature_type = "categorical"
+                if t_prime:
+                    first_lit = t_prime[0]
+                    # Note: make sure to_features is fast or cached
+                    feature_str = self.to_features((first_lit,))[0]
+                    if ("in ]" in feature_str or "in [" in feature_str) or \
+                       any(op in feature_str for op in ['<', '>', '<=', '>=']):
+                        feature_type = "numeric"
 
-                        # CAS 2 : Bloqué sur un NÉGATIF -> Chercher des Positifs
-                        elif failed_literal < 0:
-                            # Y a-t-il des positifs dans ce qui reste ?
-                            # (Cela arrive si votre tri initial met les négatifs avant les positifs)
-                            pending_opposite = [x for x in t_prime if x > 0]
-                            
-                            if pending_opposite:
-                                # On sauvegarde TOUS les négatifs restants (Safe Keep)
-                                remaining_same_sign = [x for x in t_prime if x < 0]
-                                cx.extend(remaining_same_sign)
-                                
-                                # On bascule sur les positifs
-                                t_prime = pending_opposite
-                                # print(f"-> Jump: Négatifs gardés, passage aux Positifs.")
-                                continue
+                # === Line 9: while true do ===
+                while True:
+                    # Lines 10–11: if t' is empty then exit-while
+                    if not t_prime:
+                        break
 
-                    # Comportement standard (Fin de feature ou Catégorique)
-                    cx.extend(t_prime) # Ligne 24
-                    break              # Ligne 25
+                    found = False  # Line 13
 
-        # Ligne 31: return cx
-        return sorted(tuple(cx))
+                    # Line 14: gs <- msg(t', Sigma)
+                    gs = self.msg(t_prime, feature_type)
+
+                    # Line 16: for each g in gs do
+                    for g in gs:
+                        hypothesis = list(cx) + list(g)
+                        for j in range(i + 1, len(features_groups)):
+                            hypothesis.extend(remaining_features_map[j])
+
+                        # Line 18: if imp(...) then
+                        # MODIFICATION: Pass the 'solver' instead of 'hard_clauses'
+                        if self.imp(hypothesis, solver):
+                            t_prime = g     # Line 19
+                            found = True    # Line 20
+                            break           # Line 21
+
+                    # Line 23: if not found then
+                    if not found:
+
+                        # --- OPTIMIZATION: SYMMETRIC SAFE JUMP ---
+                        if feature_type == "numeric":
+                            failed_literal = t_prime[0]
+
+                            # CASE 1: Blocked on a POSITIVE → search for NEGATIVES
+                            if failed_literal > 0:
+                                pending_opposite = [x for x in t_prime if x < 0]
+                                if pending_opposite:
+                                    cx.extend([x for x in t_prime if x > 0])
+                                    t_prime = pending_opposite
+                                    continue
+
+                            # CASE 2: Blocked on a NEGATIVE → search for POSITIVES
+                            elif failed_literal < 0:
+                                pending_opposite = [x for x in t_prime if x > 0]
+                                if pending_opposite:
+                                    cx.extend([x for x in t_prime if x < 0])
+                                    t_prime = pending_opposite
+                                    continue
+
+                        # Standard behavior
+                        cx.extend(t_prime)  # Line 24
+                        break               # Line 25
+
+            # Line 31: return cx
+            return sorted(tuple(cx))
+
 
     def msg(self, t_part, feature_type):
-        """
-        Implémentation de msg (Most Specific Generalisation).
-        """
-        gs = []
-        
-        # Pour le numérique, on suppose toujours qu'on veut enlever l'élément 
-        # le plus "externe" (le premier de la liste triée).
-        if feature_type == "numeric":
-            if t_part:
-                gs.append(t_part[1:])
-        else:
-            # Pour le catégorique, on teste toutes les suppressions possibles
-            for k in range(len(t_part)):
-                gs.append(t_part[:k] + t_part[k+1:])
-                
-        return gs
-
-    def imp(self, hypothesis, hard_clauses):
-        """ Test d'implicant via SAT solver. """
-        solver = Glucose3()
-        for clause in hard_clauses:
-            solver.add_clause(list(clause))
-        for lit in hypothesis:
-            solver.add_clause([lit])
-        is_sat = solver.solve()
-        solver.delete()
-        return not is_sat
-    def m_cpi_xp(self, *, n=1, strategy="priority_order", random_seed=42, ordre_features=None):
-        """
-        Calcule une explication minimale (mCPI-Xp)[cite: 99].
-        
-        Processus :
-        1. Appelle cpi_xp pour obtenir une explication valide (mais potentiellement non minimale)[cite: 108].
-        2. Applique une réduction gloutonne : supprime chaque littéral s'il est redondant[cite: 196].
-        """
-        # 1. Obtenir l'explication de base (CPI-Xp)
-        # Note : cpi_xp retourne un tuple trié, on le convertit en liste pour modification
-        cpi_explanation = list(self.cpi_xp(n=n, strategy=strategy, random_seed=random_seed, ordre_features=ordre_features))
-        
-        # 2. Préparation des contraintes (Hard Clauses = Sigma + NOT(f*))
-        # (Nécessaire pour le test d'implicant)
-        theory_clauses = list(self.get_theory())
-        
-        if self._random_forest.n_classes == 2:
-            inverse_model_cnf = self._random_forest.to_CNF(
-                self._instance, self._binary_representation, self.target_prediction, tree_encoding=Encoding.MUS
-            )
-        else:
-            inverse_model_cnf = self._random_forest.to_CNF_sufficient_reason_multi_classes(
-                self._instance, self._binary_representation, self.target_prediction
-            )
-            
-        hard_clauses = theory_clauses + list(inverse_model_cnf)
-
-        # 3. Boucle de Minimisation (Greedy Deletion)
-        # On itère sur une COPIE de la liste pour pouvoir modifier l'originale
-        for literal in list(cpi_explanation):
-            
-            # On tente de supprimer le littéral courant
-            candidate_explanation = [l for l in cpi_explanation if l != literal]
-            
-            # On teste si l'explication réduite est toujours valide
-            # self.imp renvoie True si UNSAT (Valide), False si SAT (Invalide)
-            is_valid_implicant = self.imp(candidate_explanation, hard_clauses)
-            
-            if is_valid_implicant:
-                # UNSAT : Le modèle ne peut toujours pas prédire l'inverse.
-                # Le littéral était donc inutile (redondant). On valide la suppression.
-                cpi_explanation.remove(literal)
-                # print(f"✓ Redondant supprimé : {literal}")
+            """
+            Implementation of msg (Most Specific Generalisation).
+            (Unchanged)
+            """
+            gs = []
+            if feature_type == "numeric":
+                if t_part:
+                    gs.append(t_part[1:])
             else:
-                # SAT : Le solveur a trouvé un contre-exemple.
-                # Le littéral était nécessaire pour bloquer ce contre-exemple. On le garde.
-                # print(f"✗ Nécessaire conservé : {literal}")
-                pass
+                for k in range(len(t_part)):
+                    gs.append(t_part[:k] + t_part[k+1:])
+            return gs
 
-        # Retourne l'explication minimale triée
-        return sorted(tuple(cpi_explanation))
+
+    def imp(self, hypothesis, solver):
+            """
+            Implicant test via SAT solver (Safe version).
+
+            Instead of creating a solver, we reuse an existing one.
+            We use 'assumptions' to test the hypothesis without modifying
+            the solver's permanent memory.
+            """
+            # Convert the hypothesis to SAT format if needed
+            # hypothesis already contains literals.
+
+            # solve() returns True if SAT, False if UNSAT.
+            # Implication A -> B is true iff (A and not-B) is UNSAT.
+            # Here, 'solver' already contains not-B (inverse_model_cnf).
+            # So we test whether (hypothesis + solver) is UNSAT.
+
+            is_sat = solver.solve(assumptions=hypothesis)
+
+            return not is_sat  # Return True if UNSAT (i.e., valid implication)
+
+
+    def m_cpi_xp(self, *, n=1, strategy="priority_order", random_seed=42, ordre_features=None):
+                """
+                Computes a minimal explanation (mCPI-Xp).
+                Corrected version using a persistent solver.
+                """
+                # 1. Obtain the base explanation (CPI-Xp)
+                # Note: cpi_xp manages its own solver internally
+                cpi_explanation = list(
+                    self.cpi_xp(n=n, strategy=strategy,
+                                random_seed=random_seed,
+                                ordre_features=ordre_features)
+                )
+
+                # 2. Constraint preparation
+                theory_clauses = list(self.get_theory())
+
+                if self._random_forest.n_classes == 2:
+                    inverse_model_cnf = self._random_forest.to_CNF(
+                        self._instance,
+                        self._binary_representation,
+                        self.target_prediction,
+                        tree_encoding=Encoding.MUS
+                    )
+                else:
+                    inverse_model_cnf = self._random_forest.to_CNF_sufficient_reason_multi_classes(
+                        self._instance,
+                        self._binary_representation,
+                        self.target_prediction
+                    )
+
+                hard_clauses = theory_clauses + list(inverse_model_cnf)
+
+                # 3. Minimization loop with a PERSISTENT SOLVER
+                with Glucose3() as solver:
+                    # Load clauses once
+                    for cl in hard_clauses:
+                        solver.add_clause(list(cl))
+
+                    # Iterate over a COPY of the list to allow modification
+                    for literal in list(cpi_explanation):
+
+                        # Try removing the current literal
+                        candidate_explanation = [l for l in cpi_explanation if l != literal]
+
+                        # FIX HERE: pass the 'solver' to imp, not the clauses!
+                        # self.imp checks whether candidate_explanation is sufficient via assumptions
+                        is_valid_implicant = self.imp(candidate_explanation, solver)
+
+                        if is_valid_implicant:
+                            # Still valid (UNSAT): the literal was redundant
+                            cpi_explanation.remove(literal)
+                        else:
+                            # Becomes invalid (SAT): the literal was necessary
+                            pass
+
+                # Return the sorted minimal explanation
+                return sorted(tuple(cpi_explanation))

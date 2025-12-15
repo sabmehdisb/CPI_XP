@@ -154,7 +154,7 @@ class RandomForest(TreeEnsembles):
                 # Impair number of trees
                 condition_atleast = floor(self.n_trees / 2) + 1     
         
-        print("condition_atleast:", condition_atleast)
+        # print("condition_atleast:", condition_atleast)
         # n_original_variables = len(binary_representation)
         # if target_prediction is None:
         #     target_prediction = self.take_decisions_instance(instance)
