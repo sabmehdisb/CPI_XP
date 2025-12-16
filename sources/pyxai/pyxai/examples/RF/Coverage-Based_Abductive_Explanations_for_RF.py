@@ -376,7 +376,7 @@ def main():
         dataset_name=dataset_name,
         n_instances=10,
         n_folds=10,
-        timeout_sec=1
+        timeout_sec=60
     )
     
     # Generate and save report
