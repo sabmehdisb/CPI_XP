@@ -1,47 +1,55 @@
 """
-Experimental Benchmark: Comparison of Explanation Methods for Decision Trees
-Evaluates External CPI, PyXAI CPI-XP, M-CPI-XP, and Sufficient Reason methods
+Experimental Benchmark: Comparison of Explanation Methods for Decision Trees.
+
+This script evaluates the performance of several explanation methods:
+1. External CPI (Cooper & Amgoud)
+2. PyXAI CPI-XP
+3. PyXAI M-CPI-XP
+4. PyXAI Sufficient Reason (Baseline)
+
+It records execution time, timeout rates, explanation size, and dataset statistics.
 """
 
 import json
 import signal
 import time
-from pathlib import Path
-
+import os
 import pandas as pd
 from pyxai import Learning, Explainer, Tools
 
-# Import external functions
+# Import external functions for the specific comparison
 from cpi_explaine_DT import findCPIexplanation, cpi_xp_to_sat_format
 
+# Disable PyXAI verbose output for cleaner logs
 Tools.set_verbose(0)
+
 class TimeoutException(Exception):
-    """Exception raised when computation exceeds time limit"""
+    """Exception raised when a computation exceeds the defined time limit."""
     pass
 
 
 def timeout_handler(signum, frame):
-    """Signal handler for timeout"""
+    """Signal handler to trigger the TimeoutException."""
     raise TimeoutException
 
 
-# Configure timeout mechanism (Unix/Linux/Mac)
+# Configure timeout mechanism (Unix/Linux/Mac compatible)
 if hasattr(signal, 'SIGALRM'):
     signal.signal(signal.SIGALRM, timeout_handler)
 
 
 def run_with_timeout(func, args=(), kwargs=None, timeout_duration=60):
     """
-    Execute a function with time limit and measure execution time
-    
+    Executes a function with a strict time limit and measures execution time.
+
     Args:
-        func: Function to execute
-        args: Positional arguments
-        kwargs: Keyword arguments
-        timeout_duration: Maximum execution time in seconds
-        
+        func (callable): The function to execute.
+        args (tuple): Positional arguments for the function.
+        kwargs (dict): Keyword arguments for the function.
+        timeout_duration (int): Maximum execution time in seconds.
+
     Returns:
-        tuple: (result, duration, status)
+        tuple: (result, duration, status) where status is 'Success', 'Timeout', or 'Error'.
     """
     if kwargs is None:
         kwargs = {}
@@ -64,6 +72,7 @@ def run_with_timeout(func, args=(), kwargs=None, timeout_duration=60):
     except Exception as e:
         status = f"Error: {str(e)}"
     finally:
+        # Ensure alarm is disabled even if an error occurs
         if hasattr(signal, 'SIGALRM'):
             signal.alarm(0)
     
@@ -75,14 +84,14 @@ def run_with_timeout(func, args=(), kwargs=None, timeout_duration=60):
 
 def compute_statistics(df_results, method_suffix):
     """
-    Calculate statistics for a given method
-    
+    Calculates aggregate statistics for a specific method from the results DataFrame.
+
     Args:
-        df_results: DataFrame containing experimental results
-        method_suffix: Suffix identifying the method (e.g., 'ext', 'cpi')
-        
+        df_results (pd.DataFrame): DataFrame containing experimental results.
+        method_suffix (str): The suffix identifying the method (e.g., 'ext', 'cpi').
+
     Returns:
-        dict: Statistics including mean time, timeouts, and explanation sizes
+        dict: A dictionary containing mean time, timeout rates, and average explanation sizes.
     """
     success_df = df_results[df_results[f'status_{method_suffix}'] == 'Success']
     
@@ -111,25 +120,33 @@ def compute_statistics(df_results, method_suffix):
 
 def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
     """
-    Run complete experimental benchmark
-    
+    Runs the complete experimental benchmark on a dataset.
+
     Args:
-        dataset_name: Name of the dataset (without .csv extension)
-        n_instances: Number of instances to test per fold
-        n_folds: Number of cross-validation folds
-        timeout_sec: Timeout duration in seconds
-        
+        dataset_name (str): Name of the dataset file (without extension).
+        n_instances (int): Number of test instances to process per fold.
+        n_folds (int): Number of cross-validation folds.
+        timeout_sec (int): Time limit per explanation call in seconds.
+
     Returns:
-        dict: Complete experimental results
+        tuple: (results_log, dataset_stats) containing the list of results and dataset metadata.
     """
-    # Load dataset and train models
+    # Load dataset to extract metadata
     df = pd.read_csv(f"{dataset_name}.csv")
+    
+    # Capture dataset dimensions
+    dataset_stats = {
+        "total_rows": int(df.shape[0]),
+        "n_features": int(df.shape[1])-1
+    }
+
+    # Initialize Learner
     dt_learner = Learning.Scikitlearn(
         f"{dataset_name}.csv", 
         learner_type=Learning.CLASSIFICATION
     )
     
-    # K-fold cross-validation
+    # Perform K-fold cross-validation
     dt_models = dt_learner.evaluate(
         method=Learning.K_FOLDS, 
         output=Learning.DT, 
@@ -138,9 +155,9 @@ def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
     
     results_log = []
     
-    # Process each fold
+    # Iterate through each fold
     for fold, dt_model in enumerate(dt_models):
-        # Get test instances for current fold
+        # Retrieve test instances for the current fold
         instances = dt_learner.get_instances(
             dt_model, 
             n=n_instances, 
@@ -153,34 +170,36 @@ def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
             instance = instance_dict["instance"]
             prediction = instance_dict["label"]
             
-            # Initialize explainer
+            # Initialize the Explainer
             explainer = Explainer.initialize(
                 dt_model, 
                 instance, 
                 features_type=f"{dataset_name}.types"
             )
             
-            # Prepare common data structures
-            th = explainer.get_theory()
-            v_list = explainer.binary_representation
-            forme_cnf = explainer.to_CNF()
-            constraints = list(th)
-            x_frozenset = frozenset(
-                (abs(lit), 1 if lit > 0 else 0) for lit in v_list
+            # Prepare data structures for the explanation algorithms
+            theory_clauses = explainer.get_theory()
+            binary_representation = explainer.binary_representation
+            cnf_encoding = explainer.to_CNF()
+            constraints = list(theory_clauses)
+            
+            # Create a set of literals for the external algorithm
+            binary_instance_set = frozenset(
+                (abs(lit), 1 if lit > 0 else 0) for lit in binary_representation
             )
             
-            # Initialize result dictionary
+            # Initialize result dictionary for the current instance
             res_dict = {
                 "fold": fold + 1,
                 "instance_idx": instance_idx + 1,
-                "prediction": int(prediction)
+                "prediction": int(prediction),
+                "len_binary_repr": len(binary_representation), # Size of the binarized instance
+                "len_theory": len(theory_clauses)              # Number of clauses in the model theory
             }
             
-            # Method 1: External Algorithm (Cooper & Amgoud)
-            func_ext = lambda: findCPIexplanation(x_frozenset, forme_cnf, constraints)
-            res_ext, time_ext, status_ext = run_with_timeout(
-                func_ext, timeout_duration=timeout_sec
-            )
+            # --- Method 1: External Algorithm (Cooper & Amgoud) ---
+            func_ext = lambda: findCPIexplanation(binary_instance_set, cnf_encoding, constraints)
+            res_ext, time_ext, status_ext = run_with_timeout(func_ext, timeout_duration=timeout_sec)
             
             res_dict.update({
                 "time_ext": time_ext,
@@ -189,17 +208,15 @@ def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
                 "len_feat_ext": len(explainer.to_features(cpi_xp_to_sat_format(res_ext))) if status_ext == "Success" else None
             })
             
-            # Method 2: PyXAI CPI-XP
-            ordre_features = []
+            # --- Method 2: PyXAI CPI-XP ---
+            feature_ordering = [] # Empty list implies default ordering strategy
             func_cpi = lambda: explainer.cpi_xp(
                 n=1, 
                 strategy="priority_order", 
                 random_seed=None, 
-                ordre_features=ordre_features
+                ordre_features=feature_ordering
             )
-            res_cpi, time_cpi, status_cpi = run_with_timeout(
-                func_cpi, timeout_duration=timeout_sec
-            )
+            res_cpi, time_cpi, status_cpi = run_with_timeout(func_cpi, timeout_duration=timeout_sec)
             
             res_dict.update({
                 "time_cpi": time_cpi,
@@ -208,16 +225,14 @@ def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
                 "len_feat_cpi": len(explainer.to_features(res_cpi)) if status_cpi == "Success" else None
             })
             
-            # Method 3: PyXAI M-CPI-XP
+            # --- Method 3: PyXAI M-CPI-XP ---
             func_mcpi = lambda: explainer.m_cpi_xp(
                 n=1, 
                 strategy="priority_order", 
                 random_seed=None, 
-                ordre_features=ordre_features
+                ordre_features=feature_ordering
             )
-            res_mcpi, time_mcpi, status_mcpi = run_with_timeout(
-                func_mcpi, timeout_duration=timeout_sec
-            )
+            res_mcpi, time_mcpi, status_mcpi = run_with_timeout(func_mcpi, timeout_duration=timeout_sec)
             
             res_dict.update({
                 "time_mcpi": time_mcpi,
@@ -226,11 +241,9 @@ def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
                 "len_feat_mcpi": len(explainer.to_features(res_mcpi)) if status_mcpi == "Success" else None
             })
             
-            # Method 4: PyXAI Sufficient Reason (Baseline)
+            # --- Method 4: PyXAI Sufficient Reason (Baseline) ---
             func_sr = lambda: explainer.sufficient_reason(n=1)
-            res_sr, time_sr, status_sr = run_with_timeout(
-                func_sr, timeout_duration=timeout_sec
-            )
+            res_sr, time_sr, status_sr = run_with_timeout(func_sr, timeout_duration=timeout_sec)
             
             res_dict.update({
                 "time_sr": time_sr,
@@ -241,23 +254,23 @@ def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
             
             results_log.append(res_dict)
     
-    return results_log
+    return results_log, dataset_stats
 
 
-def generate_summary(results_log, dataset_name):
+def generate_summary(results_log, dataset_stats, dataset_name):
     """
-    Generate summary statistics and save results
-    
+    Generates a statistical summary of the experiment.
+
     Args:
-        results_log: List of experimental results
-        dataset_name: Name of the dataset
-        
+        results_log (list): List of dictionaries containing raw results.
+        dataset_stats (dict): Metadata about the dataset structure.
+        dataset_name (str): Name of the dataset.
+
     Returns:
-        dict: Complete experimental report
+        dict: A structured report containing configuration, stats, and raw data.
     """
     df_results = pd.DataFrame(results_log)
     
-    # Calculate statistics for each method
     methods = {
         "external_cooper_amgoud": "ext",
         "pyxai_cpi_xp": "cpi",
@@ -270,9 +283,18 @@ def generate_summary(results_log, dataset_name):
         for method_name, suffix in methods.items()
     }
     
-    # Prepare complete report
+    # Calculate average complexity metrics
+    avg_binary_len = float(df_results['len_binary_repr'].mean())
+    avg_theory_len = float(df_results['len_theory'].mean())
+    
     report = {
         "dataset": dataset_name,
+        "dataset_metadata": {
+            "total_rows": dataset_stats["total_rows"],
+            "n_features": dataset_stats["n_features"],
+            "avg_binary_features_size": avg_binary_len,
+            "avg_theory_clauses": avg_theory_len
+        },
         "experiment_config": {
             "n_folds": int(df_results['fold'].max()),
             "total_instances": len(results_log),
@@ -286,34 +308,27 @@ def generate_summary(results_log, dataset_name):
 
 
 def save_results(report, dataset_name):
-    """
-    Save experimental results to JSON file
-    
-    Args:
-        report: Complete experimental report
-        dataset_name: Name of the dataset
-    """
+    """Saves the report to a JSON file."""
     output_file = f"{dataset_name}_DT.json"
     
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
     
-    print(f"\nResults saved to: {output_file}")
+    print(f"\nResults successfully saved to: {output_file}")
 
 
 def display_summary(report):
-    """
-    Display summary statistics in formatted table
-    
-    Args:
-        report: Complete experimental report
-    """
+    """Prints a formatted summary table to the console."""
     print("\n" + "="*80)
     print("EXPERIMENTAL RESULTS SUMMARY")
     print("="*80)
+    
+    meta = report['dataset_metadata']
     print(f"\nDataset: {report['dataset']}")
-    print(f"Total Instances: {report['experiment_config']['total_instances']}")
-    print(f"Cross-Validation Folds: {report['experiment_config']['n_folds']}")
+    print(f"Dimensions: {meta['total_rows']} rows x {meta['n_features']} columns")
+    print(f"Avg. Binary Instance Size: {meta['avg_binary_features_size']:.2f} literals")
+    print(f"Avg. Theory Size: {meta['avg_theory_clauses']:.2f} clauses")
+    print(f"Total Instances Tested: {report['experiment_config']['total_instances']}")
     
     print("\n" + "-"*80)
     print(f"{'Method':<30} {'Mean Time (s)':<15} {'Success':<10} {'Timeouts':<12} {'Mean Size':<12}")
@@ -340,23 +355,23 @@ def display_summary(report):
 
 
 def main():
-    """Main execution function"""
-    # Get dataset name from command line options
+    """Main entry point for the benchmark."""
     dataset_name = Tools.Options.dataset
+    dataset_name_clean = os.path.basename(dataset_name)
     
-    print(f"Starting experimental benchmark on dataset: {dataset_name}")
+    print(f"Starting experimental benchmark on dataset: {dataset_name_clean}")
     print("Configuration: 10-fold cross-validation, 10 instances per fold\n")
     
     # Run experiment
-    results_log = run_experiment(
+    results_log, dataset_stats = run_experiment(
         dataset_name=dataset_name,
         n_instances=10,
         n_folds=10,
         timeout_sec=1
     )
     
-    # Generate summary and save results
-    report = generate_summary(results_log, dataset_name)
+    # Generate and save report
+    report = generate_summary(results_log, dataset_stats, dataset_name_clean)
     save_results(report, dataset_name)
     display_summary(report)
 
