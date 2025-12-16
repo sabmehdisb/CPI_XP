@@ -16,7 +16,7 @@ DATASETS_DIR = os.path.abspath("../../../../../datasets")
 # Number of parallel processes
 # WARNING: High concurrency may lead to memory saturation (RAM) or CPU thrashing.
 # Recommendation: Start with 4 workers and monitor system resources.
-MAX_WORKERS = 8
+MAX_WORKERS = 16
 # =================================================
 
 def get_tasks(datasets_dir: str) -> List[Tuple[str, str]]:
@@ -107,7 +107,7 @@ def run_task(dataset_name: str, dataset_path: str) -> bool:
 def main():
     """Main entry point for the global benchmark execution."""
     print("=" * 60)
-    print(f"BENCHMARK SUITE EXECUTION")
+    print(f"BENCHMARK EXECUTION")
     print("=" * 60)
     print(f"Datasets Directory : {DATASETS_DIR}")
     print(f"Parallel Workers   : {MAX_WORKERS}")

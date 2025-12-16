@@ -107,7 +107,7 @@ def run_task(dataset_name: str, dataset_path: str) -> bool:
 def main():
     """Main entry point for the global benchmark execution."""
     print("=" * 60)
-    print(f"BENCHMARK SUITE EXECUTION")
+    print(f"BENCHMARK EXECUTION")
     print("=" * 60)
     print(f"Datasets Directory : {DATASETS_DIR}")
     print(f"Parallel Workers   : {MAX_WORKERS}")

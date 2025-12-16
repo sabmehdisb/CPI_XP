@@ -301,7 +301,7 @@ def generate_summary(results_log, dataset_stats, dataset_name):
         "dataset_metadata": {
             "n_instances": dataset_stats["n_instances"],
             "n_features": dataset_stats["n_features"],
-            "avg_binary_instance_size": avg_binary_len,
+            "avg_binary_features_size": avg_binary_len,
             "avg_theory_clauses": avg_theory_len
         },
         "experiment_config": {
@@ -335,7 +335,7 @@ def display_summary(report):
     meta = report['dataset_metadata']
     print(f"\nDataset: {report['dataset']}")
     print(f"Dimensions: {meta['n_instances']} instances x {meta['n_features']} features")
-    print(f"Avg. Binary Instance Size: {meta['avg_binary_instance_size']:.2f} literals")
+    print(f"Avg. Binary Instance Size: {meta['avg_binary_features_size']:.2f} literals")
     print(f"Avg. Theory Size: {meta['avg_theory_clauses']:.2f} clauses")
     print(f"Total Instances Tested: {report['experiment_config']['total_instances']}")
     
