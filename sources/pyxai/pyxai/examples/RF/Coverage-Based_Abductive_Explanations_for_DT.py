@@ -7,13 +7,15 @@ This script evaluates the performance of several explanation methods:
 3. PyXAI M-CPI-XP
 4. PyXAI Sufficient Reason (Baseline)
 
-It records execution time, timeout rates, explanation size, and dataset statistics.
+It records execution time, timeout rates, explanation size, dataset statistics,
+and Model Accuracy (Mean +/- Std).
 """
 
 import json
 import signal
 import time
 import os
+import statistics
 import pandas as pd
 from pyxai import Learning, Explainer, Tools
 
@@ -84,38 +86,101 @@ def run_with_timeout(func, args=(), kwargs=None, timeout_duration=60):
 
 def compute_statistics(df_results, method_suffix):
     """
-    Calculates aggregate statistics for a specific method from the results DataFrame.
-
-    Args:
-        df_results (pd.DataFrame): DataFrame containing experimental results.
-        method_suffix (str): The suffix identifying the method (e.g., 'ext', 'cpi').
-
-    Returns:
-        dict: A dictionary containing mean time, timeout rates, and average explanation sizes.
+    Calculates aggregate statistics for a specific method, including 
+    mean and standard deviation for time and explanation size.
     """
+    # Filter only successful executions for valid statistics
     success_df = df_results[df_results[f'status_{method_suffix}'] == 'Success']
     
+    # Handle case where no instance was successful
     if len(success_df) == 0:
         return {
             "mean_time_s": None,
+            "std_time_s": None,
             "timeout_count": len(df_results),
             "timeout_percentage": 100.0,
             "mean_raw_size": None,
             "mean_feature_size": None,
+            "std_feature_size": None,
             "success_count": 0
         }
     
     total_runs = len(df_results)
     nb_timeouts = len(df_results[df_results[f'status_{method_suffix}'] == 'Timeout'])
     
+    # Calculate Standard Deviation (handle case with single result where std is NaN)
+    std_time = success_df[f'time_{method_suffix}'].std()
+    std_size = success_df[f'len_feat_{method_suffix}'].std()
+    
+    # If only 1 sample, std is NaN; replace with 0.0
+    if pd.isna(std_time): std_time = 0.0
+    if pd.isna(std_size): std_size = 0.0
+
     return {
         "mean_time_s": float(success_df[f'time_{method_suffix}'].mean()),
+        "std_time_s": float(std_time),
         "timeout_count": int(nb_timeouts),
         "timeout_percentage": float((nb_timeouts / total_runs) * 100),
         "mean_raw_size": float(success_df[f'len_raw_{method_suffix}'].mean()),
         "mean_feature_size": float(success_df[f'len_feat_{method_suffix}'].mean()),
+        "std_feature_size": float(std_size),
         "success_count": int(len(success_df))
     }
+
+
+def display_summary(report):
+    """
+    Prints a formatted summary table to the console.
+    """
+    print("\n" + "="*100)
+    print("EXPERIMENTAL RESULTS SUMMARY")
+    print("="*100)
+    
+    meta = report['dataset_metadata']
+    perf = report.get('model_performance', {})
+    
+    print(f"\nDataset: {report['dataset']}")
+    print(f"Dimensions: {meta['total_rows']} rows x {meta['n_features']} features")
+    
+    # Display accuracy if available
+    if 'accuracy_mean' in perf:
+        print(f"Model Accuracy: {perf['accuracy_mean']:.2f}% ± {perf['accuracy_std']:.2f}%")
+        
+    print(f"Avg. Binary Instance Size: {meta['avg_binary_features_size']:.2f} literals")
+    print(f"Total Instances Tested: {report['experiment_config']['total_instances']}")
+    
+    print("\n" + "-"*100)
+    print(f"{'Method':<30} {'Time (s) [mean ± std]':<25} {'Success':<10} {'Timeouts':<12} {'Size [mean ± std]':<20}")
+    print("-"*100)
+    
+    method_names = {
+        "external_cooper_amgoud": "External (Cooper/Amgoud)",
+        "pyxai_cpi_xp": "PyXAI CPI-XP",
+        "pyxai_m_cpi_xp": "PyXAI M-CPI-XP",
+        "pyxai_sufficient_reason": "PyXAI Sufficient Reason"
+    }
+    
+    for method_key, method_display in method_names.items():
+        stats = report['methods'][method_key]
+        
+        # Format Time string
+        if stats['mean_time_s'] is not None:
+            time_str = f"{stats['mean_time_s']:.3f} ± {stats['std_time_s']:.3f}"
+        else:
+            time_str = "N/A"
+            
+        # Format Size string
+        if stats['mean_feature_size'] is not None:
+            size_str = f"{stats['mean_feature_size']:.2f} ± {stats['std_feature_size']:.2f}"
+        else:
+            size_str = "N/A"
+
+        success_str = f"{stats['success_count']}"
+        timeout_str = f"{stats['timeout_count']} ({stats['timeout_percentage']:.1f}%)"
+        
+        print(f"{method_display:<30} {time_str:<25} {success_str:<10} {timeout_str:<12} {size_str:<20}")
+    
+    print("="*100 + "\n")
 
 
 def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
@@ -129,7 +194,7 @@ def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
         timeout_sec (int): Time limit per explanation call in seconds.
 
     Returns:
-        tuple: (results_log, dataset_stats) containing the list of results and dataset metadata.
+        tuple: (results_log, dataset_stats, model_performance)
     """
     # Load dataset to extract metadata
     df = pd.read_csv(f"{dataset_name}.csv")
@@ -147,11 +212,32 @@ def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
     )
     
     # Perform K-fold cross-validation
+    # Note: To improve recall on imbalanced datasets, consider adding class_weight='balanced'
     dt_models = dt_learner.evaluate(
         method=Learning.K_FOLDS, 
         output=Learning.DT, 
         seed=0
     )
+    
+    # --- START ACCURACY EXTRACTION ---
+    # Retrieve details from the 10 folds
+    details = dt_learner.get_details()
+    
+    # Extract accuracy for each fold
+    accuracies = [d['metrics']['accuracy'] for d in details]
+    
+    # Calculate mean and standard deviation
+    mean_accuracy = statistics.mean(accuracies)
+    std_accuracy = statistics.stdev(accuracies) if len(accuracies) > 1 else 0.0
+    
+    model_performance = {
+        "model_name": details[0]['evaluation_output'],
+        "accuracy_mean": mean_accuracy,
+        "accuracy_std": std_accuracy,
+        # Save options for reproducibility
+        "parameters": details[0]['extras'].get('learner_options', {})
+    }
+    # --- END ACCURACY EXTRACTION ---
     
     results_log = []
     
@@ -193,8 +279,8 @@ def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
                 "fold": fold + 1,
                 "instance_idx": instance_idx + 1,
                 "prediction": int(prediction),
-                "len_binary_repr": len(binary_representation), # Size of the binarized instance
-                "len_theory": len(theory_clauses)              # Number of clauses in the model theory
+                "len_binary_repr": len(binary_representation),
+                "len_theory": len(theory_clauses)
             }
             
             # --- Method 1: External Algorithm (Cooper & Amgoud) ---
@@ -254,16 +340,18 @@ def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
             
             results_log.append(res_dict)
     
-    return results_log, dataset_stats
+    # Return model_performance as well
+    return results_log, dataset_stats, model_performance
 
 
-def generate_summary(results_log, dataset_stats, dataset_name):
+def generate_summary(results_log, dataset_stats, model_performance, dataset_name):
     """
     Generates a statistical summary of the experiment.
 
     Args:
         results_log (list): List of dictionaries containing raw results.
         dataset_stats (dict): Metadata about the dataset structure.
+        model_performance (dict): Summary of model accuracy.
         dataset_name (str): Name of the dataset.
 
     Returns:
@@ -278,14 +366,14 @@ def generate_summary(results_log, dataset_stats, dataset_name):
         "pyxai_sufficient_reason": "sr"
     }
     
-    statistics = {
+    statistics_methods = {
         method_name: compute_statistics(df_results, suffix)
         for method_name, suffix in methods.items()
     }
     
     # Calculate average complexity metrics
-    avg_binary_len = float(df_results['len_binary_repr'].mean())
-    avg_theory_len = float(df_results['len_theory'].mean())
+    avg_binary_len = float(df_results['len_binary_repr'].mean()) if not df_results.empty else 0
+    avg_theory_len = float(df_results['len_theory'].mean()) if not df_results.empty else 0
     
     report = {
         "dataset": dataset_name,
@@ -295,12 +383,15 @@ def generate_summary(results_log, dataset_stats, dataset_name):
             "avg_binary_features_size": avg_binary_len,
             "avg_theory_clauses": avg_theory_len
         },
+        # --- ADDED HERE ---
+        "model_performance": model_performance, 
+        # ------------------
         "experiment_config": {
-            "n_folds": int(df_results['fold'].max()),
+            "n_folds": int(df_results['fold'].max()) if not df_results.empty else 0,
             "total_instances": len(results_log),
-            "instances_per_fold": len(results_log) // int(df_results['fold'].max())
+            "instances_per_fold": len(results_log) // int(df_results['fold'].max()) if not df_results.empty else 0
         },
-        "methods": statistics,
+        "methods": statistics_methods,
         "detailed_results": results_log
     }
     
@@ -316,44 +407,6 @@ def save_results(report, dataset_name):
     
     print(f"\nResults successfully saved to: {output_file}")
 
-
-def display_summary(report):
-    """Prints a formatted summary table to the console."""
-    print("\n" + "="*80)
-    print("EXPERIMENTAL RESULTS SUMMARY")
-    print("="*80)
-    
-    meta = report['dataset_metadata']
-    print(f"\nDataset: {report['dataset']}")
-    print(f"Dimensions: {meta['total_rows']} rows x {meta['n_features']} columns")
-    print(f"Avg. Binary Instance Size: {meta['avg_binary_features_size']:.2f} literals")
-    print(f"Avg. Theory Size: {meta['avg_theory_clauses']:.2f} clauses")
-    print(f"Total Instances Tested: {report['experiment_config']['total_instances']}")
-    
-    print("\n" + "-"*80)
-    print(f"{'Method':<30} {'Mean Time (s)':<15} {'Success':<10} {'Timeouts':<12} {'Mean Size':<12}")
-    print("-"*80)
-    
-    method_names = {
-        "external_cooper_amgoud": "External (Cooper/Amgoud)",
-        "pyxai_cpi_xp": "PyXAI CPI-XP",
-        "pyxai_m_cpi_xp": "PyXAI M-CPI-XP",
-        "pyxai_sufficient_reason": "PyXAI Sufficient Reason"
-    }
-    
-    for method_key, method_display in method_names.items():
-        stats = report['methods'][method_key]
-        
-        time_str = f"{stats['mean_time_s']:.4f}" if stats['mean_time_s'] is not None else "N/A"
-        success_str = f"{stats['success_count']}"
-        timeout_str = f"{stats['timeout_count']} ({stats['timeout_percentage']:.1f}%)"
-        size_str = f"{stats['mean_feature_size']:.2f}" if stats['mean_feature_size'] is not None else "N/A"
-        
-        print(f"{method_display:<30} {time_str:<15} {success_str:<10} {timeout_str:<12} {size_str:<12}")
-    
-    print("="*80 + "\n")
-
-
 def main():
     """Main entry point for the benchmark."""
     dataset_name = Tools.Options.dataset
@@ -362,8 +415,8 @@ def main():
     print(f"Starting experimental benchmark on dataset: {dataset_name_clean}")
     print("Configuration: 10-fold cross-validation, 10 instances per fold\n")
     
-    # Run experiment
-    results_log, dataset_stats = run_experiment(
+    # Run experiment - Now retrieving 3 values
+    results_log, dataset_stats, model_performance = run_experiment(
         dataset_name=dataset_name,
         n_instances=10,
         n_folds=10,
@@ -371,7 +424,7 @@ def main():
     )
     
     # Generate and save report
-    report = generate_summary(results_log, dataset_stats, dataset_name_clean)
+    report = generate_summary(results_log, dataset_stats, model_performance, dataset_name_clean)
     save_results(report, dataset_name)
     display_summary(report)
 
