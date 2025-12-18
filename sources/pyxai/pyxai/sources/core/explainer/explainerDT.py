@@ -471,88 +471,100 @@ class ExplainerDT(Explainer):
 
 
     def cpi_xp(
-        self, *, n=1, strategy="priority_order", random_seed=42, ordre_features=None
-    ):
-        """
-        Implementation of Algorithm 1 (CPI-Xp) adapted for Decision Trees (DT).
-        Includes the "Symmetric Safe Jump" optimization for numerical features.
-        """
-        # 1. DT-specific initialization
-        theory_clauses = list(self.get_theory())
+            self, *, n=1, strategy="priority_order", random_seed=42, ordre_features=None
+        ):
+            """
+            Implementation of Algorithm 1 (CPI-Xp) adapted for Decision Trees (DT).
+            Includes the "Symmetric Safe Jump" optimization for numerical features.
+            
+            TECHNICAL FIX:
+            The solver is initialized ONLY ONCE here and passed to the imp_dt function.
+            """
+            # 1. DT-specific initialization
+            theory_clauses = list(self.get_theory())
 
-        # CNF representing the target prediction
-        cnf_target = self._tree.to_CNF(
-            self._instance, target_prediction=self.target_prediction
-        )
+            # CNF representing the target prediction
+            cnf_target = self._tree.to_CNF(
+                self._instance, target_prediction=self.target_prediction
+            )
 
-        current_instance = list(self._binary_representation)
-        features_groups = self.get_suppression_order(
-            current_instance,
-            theory_clauses,
-            strategy="priority_order",
-            seed=None,
-            ordre_features=ordre_features,
-        )
+            current_instance = list(self._binary_representation)
+            features_groups = self.get_suppression_order(
+                current_instance,
+                theory_clauses,
+                strategy="priority_order",
+                seed=None,
+                ordre_features=ordre_features,
+            )
 
-        cx = []
-        remaining_features_map = {i: group for i, group in enumerate(features_groups)}
+            cx = []
+            remaining_features_map = {i: group for i, group in enumerate(features_groups)}
 
-        # Main loop over feature groups
-        for i, t_prime in enumerate(features_groups):
+            # === PERSISTENT SOLVER INITIALIZATION ===
+            # Created here to avoid recreating it thousands of times inside imp_dt()
+            with Glucose3() as solver:
+                # Load the theory clauses once and for all
+                for clause in theory_clauses:
+                    solver.add_clause(list(clause))
 
-            # Feature type detection
-            feature_type = "categorical"
-            if t_prime:
-                first_lit = t_prime[0]
-                feature_str = self.to_features((first_lit,))[0]
-                if (
-                    ("in ]" in feature_str or "in [" in feature_str)
-                    or any(op in feature_str for op in ["<", ">", "<=", ">="])
-                ):
-                    feature_type = "numeric"
+                # Main loop over feature groups
+                for i, t_prime in enumerate(features_groups):
 
-            while True:
-                if not t_prime:
-                    break
+                    # Feature type detection
+                    feature_type = "categorical"
+                    if t_prime:
+                        first_lit = t_prime[0]
+                        # Note: Ensure self.to_features is efficient or cached
+                        feature_str = self.to_features((first_lit,))[0]
+                        if (
+                            ("in ]" in feature_str or "in [" in feature_str)
+                            or any(op in feature_str for op in ["<", ">", "<=", ">="])
+                        ):
+                            feature_type = "numeric"
 
-                found = False
-                gs = self.msg(t_prime, feature_type)
+                    while True:
+                        if not t_prime:
+                            break
 
-                for g in gs:
-                    hypothesis = list(cx) + list(g)
-                    for j in range(i + 1, len(features_groups)):
-                        hypothesis.extend(remaining_features_map[j])
+                        found = False
+                        gs = self.msg(t_prime, feature_type)
 
-                    if self.imp_dt(hypothesis, theory_clauses, cnf_target):
-                        t_prime = g
-                        found = True
-                        break
+                        for g in gs:
+                            hypothesis = list(cx) + list(g)
+                            for j in range(i + 1, len(features_groups)):
+                                hypothesis.extend(remaining_features_map[j])
 
-                if not found:
-                    # Symmetric Safe Jump optimization
-                    if feature_type == "numeric":
-                        failed_literal = t_prime[0]
+                            # Pass the persistent solver
+                            if self.imp_dt(hypothesis, solver, cnf_target):
+                                t_prime = g
+                                found = True
+                                break
 
-                        if failed_literal > 0:
-                            pending_opposite = [x for x in t_prime if x < 0]
-                            if pending_opposite:
-                                remaining_same_sign = [x for x in t_prime if x > 0]
-                                cx.extend(remaining_same_sign)
-                                t_prime = pending_opposite
-                                continue
+                        if not found:
+                            # Symmetric Safe Jump optimization
+                            if feature_type == "numeric":
+                                failed_literal = t_prime[0]
 
-                        elif failed_literal < 0:
-                            pending_opposite = [x for x in t_prime if x > 0]
-                            if pending_opposite:
-                                remaining_same_sign = [x for x in t_prime if x < 0]
-                                cx.extend(remaining_same_sign)
-                                t_prime = pending_opposite
-                                continue
+                                if failed_literal > 0:
+                                    pending_opposite = [x for x in t_prime if x < 0]
+                                    if pending_opposite:
+                                        remaining_same_sign = [x for x in t_prime if x > 0]
+                                        cx.extend(remaining_same_sign)
+                                        t_prime = pending_opposite
+                                        continue
 
-                    cx.extend(t_prime)
-                    break
+                                elif failed_literal < 0:
+                                    pending_opposite = [x for x in t_prime if x > 0]
+                                    if pending_opposite:
+                                        remaining_same_sign = [x for x in t_prime if x < 0]
+                                        cx.extend(remaining_same_sign)
+                                        t_prime = pending_opposite
+                                        continue
 
-        return sorted(tuple(cx))
+                            cx.extend(t_prime)
+                            break
+
+            return sorted(tuple(cx))
 
 
     def msg(self, t_part, feature_type):
@@ -567,31 +579,33 @@ class ExplainerDT(Explainer):
         return gs
 
 
-    def imp_dt(self, hypothesis, theory_clauses, cnf_target):
+    def imp_dt(self, hypothesis, solver, cnf_target):
         """
-        DT-specific implicant test.
-        Check whether (Hypothesis AND Theory) implies every clause in cnf_target.
+        DT-specific implicant test using a PERSISTENT solver.
+        
+        We check if (Hypothesis AND Theory) => cnf_target.
+        Equivalent to: For each clause C in cnf_target, (Hypothesis AND Theory AND NOT C) is UNSAT.
+        
+        The 'solver' already contains 'Theory'.
+        We add 'Hypothesis' and 'NOT C' as assumptions (transient clauses).
         """
-        solver = Glucose3()
-
-        # Add theory
-        for clause in theory_clauses:
-            solver.add_clause(list(clause))
-
-        # Add hypothesis
-        for lit in hypothesis:
-            solver.add_clause([lit])
-
-        is_valid_implicant = True
-
+        
+        # Iterate over each clause of the target CNF
         for clause_target in cnf_target:
-            assumptions = [-lit for lit in clause_target]
+            # Negate the clause (De Morgan laws: NOT(A or B) = NOT A and NOT B)
+            # This becomes a set of literals to add to assumptions
+            negated_target_clause = [-lit for lit in clause_target]
+            
+            # Assumptions = Hypothesis + Negated Target Clause
+            # This tests the hypothesis against this specific part of the target
+            assumptions = hypothesis + negated_target_clause
+            
+            # If solve returns True (SAT), it means the implication is FALSE (we found a counter-example)
             if solver.solve(assumptions=assumptions):
-                is_valid_implicant = False
-                break
+                return False
 
-        solver.delete()
-        return is_valid_implicant
+        # If UNSAT for all negated clauses, the implication holds
+        return True
 
 
     def m_cpi_xp(
@@ -599,11 +613,9 @@ class ExplainerDT(Explainer):
     ):
         """
         Compute a minimal CPI-Xp (mCPI-Xp) for a Decision Tree (DT).
-
-        Process:
-        1. Compute a valid CPI-Xp explanation.
-        2. Apply greedy minimization by removing redundant literals.
+        Optimized version with persistent solver.
         """
+        # 1. Compute a valid (potentially non-minimal) CPI-Xp explanation
         cpi_explanation = list(
             self.cpi_xp(
                 n=n,
@@ -618,13 +630,21 @@ class ExplainerDT(Explainer):
             self._instance, target_prediction=self.target_prediction
         )
 
-        for literal in list(cpi_explanation):
-            candidate_explanation = [
-                l for l in cpi_explanation if l != literal
-            ]
+        # 2. Minimization loop with a PERSISTENT SOLVER
+        with Glucose3() as solver:
+            # Load theory once
+            for clause in theory_clauses:
+                solver.add_clause(list(clause))
+                
+            for literal in list(cpi_explanation):
+                # Try to remove the current literal
+                candidate_explanation = [
+                    l for l in cpi_explanation if l != literal
+                ]
 
-            if self.imp_dt(candidate_explanation, theory_clauses, cnf_target):
-                cpi_explanation.remove(literal)
+                # Reuse the persistent solver for the check
+                if self.imp_dt(candidate_explanation, solver, cnf_target):
+                    cpi_explanation.remove(literal)
 
         return sorted(tuple(cpi_explanation))
 

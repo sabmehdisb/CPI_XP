@@ -89,7 +89,7 @@ def generate_comparison_table(data_list):
     latex.append(r"\toprule")
     
     # En-têtes groupés avec cmidrule
-    latex.append(r"& \multicolumn{3}{c}{\textbf{External}} & \multicolumn{3}{c}{\textbf{PyXAI (CPI-XP)}} \\")
+    latex.append(r"& \multicolumn{3}{c}{\textbf{Cooper et al.}} & \multicolumn{3}{c}{\textbf{PyXAI (CPI-XP)}} \\")
     latex.append(r"\cmidrule(lr){2-4} \cmidrule(lr){5-7}")
     
     latex.append(r"\textbf{Dataset} & \textbf{Time} & \textbf{TO\%} & \textbf{Sz} & \textbf{Time} & \textbf{TO\%} & \textbf{Sz} \\")
@@ -150,7 +150,7 @@ def generate_comparison_table(data_list):
     latex.append(r"}") # Fin resizebox
     
     # Caption EN BAS
-    latex.append(r"\caption{Comparison: External vs PyXAI (CPI-XP). Time in sec. Timeouts (TO) $>0$\% are in bold.}")
+    latex.append(r"\caption{Comparison: Cooper et al.(CPI-XP) vs PyXAI (CPI-XP). Time in sec. Timeouts (TO) $>0$\% are in bold.}")
     latex.append(r"\label{tab:comparison}")
     
     latex.append(r"\end{table}")
