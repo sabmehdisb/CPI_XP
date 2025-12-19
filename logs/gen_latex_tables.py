@@ -10,7 +10,7 @@ def format_float(value, precision=1):
     return f"{value:.{precision}f}"
 
 def format_time(value):
-    """Formatte le temps (scientifique si < 0.001, sinon 3 décimales)."""
+    """Formats time (scientific notation if < 0.001, otherwise 3 decimals)."""
     if value is None:
         return "-"
     if value == 0:
@@ -28,11 +28,11 @@ def load_json_files(directory):
                 data = json.load(f)
                 data_list.append(data)
         except Exception as e:
-            print(f"Erreur lecture {file_path}: {e}", file=sys.stderr)
+            print(f"Error reading {file_path}: {e}", file=sys.stderr)
     return data_list
 
 def generate_dataset_table(data_list):
-    """Génère le Tableau 1 (Style booktabs, Caption en bas)."""
+    """Generates Table 1 (Booktabs style, Caption at bottom)."""
     latex = []
     
     latex.append(r"\begin{table}[t]")
@@ -40,17 +40,17 @@ def generate_dataset_table(data_list):
     latex.append(r"\small")
     latex.append(r"\setlength{\tabcolsep}{4pt}")
     
-    # Resizebox pour adapter à la colonne
+    # Resizebox to fit column width
     latex.append(r"\resizebox{\columnwidth}{!}{")
     
     latex.append(r"\begin{tabular}{lrrr}")
     latex.append(r"\toprule")
-    latex.append(r"\textbf{Dataset} & \textbf{$|D|$} & \textbf{$|A|$} & \textbf{$X_{DT}$} \\")
+    latex.append(r"\textbf{Dataset} & \textbf{$|D|$} & \textbf{$|A|$} & \textbf{$X_{B}$} \\")
     latex.append(r"\midrule")
     
     for entry in data_list:
         name = entry.get("dataset", "Unk").replace("_", r"\_")
-        # Raccourcir les noms trop longs SI NÉCESSAIRE (optionnel)
+        # Shorten names if too long (optional)
         if len(name) > 25: 
              name = name[:23] + ".."
 
@@ -63,10 +63,10 @@ def generate_dataset_table(data_list):
         
     latex.append(r"\bottomrule")
     latex.append(r"\end{tabular}")
-    latex.append(r"}") # Fin resizebox
+    latex.append(r"}") # End resizebox
     
-    # Caption EN BAS
-    latex.append(r"\caption{Dataset statistics. $|D|$: Instances, $|A|$: Features, $X_{DT}$: Avg. binary features.}")
+    # Caption at BOTTOM
+    latex.append(r"\caption{Dataset statistics. $|D|$: Instances, $|A|$: Features, $X_{B}$: Avg. binary features.}")
     latex.append(r"\label{tab:datasets}")
     
     latex.append(r"\end{table}")
@@ -74,7 +74,7 @@ def generate_dataset_table(data_list):
     return "\n".join(latex)
 
 def generate_comparison_table(data_list):
-    """Génère le Tableau 2 (Style booktabs, Caption en bas, Gras si TO > 0)."""
+    """Generates Table 2 (Booktabs style, Caption at bottom, Bold if TO > 0)."""
     latex = []
     
     latex.append(r"\begin{table}[t]")
@@ -82,13 +82,13 @@ def generate_comparison_table(data_list):
     latex.append(r"\small")
     latex.append(r"\setlength{\tabcolsep}{2.5pt}")
     
-    # Resizebox pour adapter à la colonne
+    # Resizebox to fit column width
     latex.append(r"\resizebox{\columnwidth}{!}{")
     
     latex.append(r"\begin{tabular}{lrrrrrr}")
     latex.append(r"\toprule")
     
-    # En-têtes groupés avec cmidrule
+    # Grouped headers with cmidrule
     latex.append(r"& \multicolumn{3}{c}{\textbf{Cooper et al.}} & \multicolumn{3}{c}{\textbf{PyXAI (CPI-XP)}} \\")
     latex.append(r"\cmidrule(lr){2-4} \cmidrule(lr){5-7}")
     
@@ -98,16 +98,15 @@ def generate_comparison_table(data_list):
     for entry in data_list:
         name = entry.get("dataset", "Unk").replace("_", r"\_")
         
-        # --- CORRECTION ICI ---
-        # J'ai retiré .replace("balance\_", "")
-        # Je garde juste le raccourcissement de compas si vous le souhaitez, sinon enlevez-le aussi.
+        # --- Clean name ---
+        # Shorten compas to comp to fit layout (optional)
         name_clean = name.replace("compas", "comp")
         
         methods = entry.get("methods", {})
         ext = methods.get("external_cooper_amgoud", {})
         cpi = methods.get("pyxai_cpi_xp", {})
         
-        # --- Valeurs ---
+        # --- Values ---
         ext_t = ext.get("mean_time_s")
         ext_to_val = ext.get("timeout_percentage", 0)
         ext_sz = ext.get("mean_feature_size")
@@ -116,7 +115,7 @@ def generate_comparison_table(data_list):
         cpi_to_val = cpi.get("timeout_percentage", 0)
         cpi_sz = cpi.get("mean_feature_size")
         
-        # --- Formatage Temps (Gras pour le meilleur) ---
+        # --- Time Formatting (Bold for best time) ---
         t_ext_str = format_time(ext_t)
         t_cpi_str = format_time(cpi_t)
         
@@ -124,7 +123,7 @@ def generate_comparison_table(data_list):
             if cpi_t < ext_t:
                 t_ext_str = r"\textbf{" + t_ext_str + "}"
 
-        # --- Formatage Timeout (Gras si > 0) ---
+        # --- Timeout Formatting (Bold if > 0) ---
         # External
         to_ext_str = f"{int(ext_to_val)}" if ext_to_val == int(ext_to_val) else f"{ext_to_val:.1f}"
         if ext_to_val > 0:
@@ -135,11 +134,11 @@ def generate_comparison_table(data_list):
         if cpi_to_val > 0:
             to_cpi_str = r"\textbf{" + to_cpi_str + "}"
 
-        # --- Formatage Taille ---
+        # --- Size Formatting ---
         sz_ext_str = format_float(ext_sz, 1)
         sz_cpi_str = format_float(cpi_sz, 1)
         
-        # Ligne du tableau
+        # Table Row
         row = (f"{name_clean} & "
                f"{t_ext_str} & {to_ext_str} & {sz_ext_str} & "
                f"{t_cpi_str} & {to_cpi_str} & {sz_cpi_str} \\\\")
@@ -147,9 +146,9 @@ def generate_comparison_table(data_list):
         
     latex.append(r"\bottomrule")
     latex.append(r"\end{tabular}")
-    latex.append(r"}") # Fin resizebox
+    latex.append(r"}") # End resizebox
     
-    # Caption EN BAS
+    # Caption at BOTTOM
     latex.append(r"\caption{Comparison: Cooper et al.(CPI-XP) vs PyXAI (CPI-XP). Time in sec. Timeouts (TO) $>0$\% are in bold.}")
     latex.append(r"\label{tab:comparison}")
     
@@ -158,17 +157,17 @@ def generate_comparison_table(data_list):
     return "\n".join(latex)
 
 def main():
-    parser = argparse.ArgumentParser(description="Générateur LaTeX IJCAI Booktabs")
-    parser.add_argument("--path", required=True, help="Dossier des logs JSON")
+    parser = argparse.ArgumentParser(description="IJCAI Booktabs LaTeX Generator")
+    parser.add_argument("--path", required=True, help="Directory containing JSON logs")
     args = parser.parse_args()
     
     if not os.path.exists(args.path):
-        print("Dossier introuvable.")
+        print("Directory not found.")
         return
 
     data = load_json_files(args.path)
     if not data:
-        print("Aucun JSON valide trouvé.")
+        print("No valid JSON files found.")
         return
 
     print("% ================= TABLE 1 =================\n")
