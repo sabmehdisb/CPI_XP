@@ -281,7 +281,7 @@ class ExplainerBT(Explainer):
         reason = c_explainer.compute_reason(self.c_BT, self._binary_representation, self._implicant_id_features,
                                             self.target_prediction, n_iterations,
                                             time_limit,
-                                            str(reason_expressivity), seed, theta)
+                                            int(reason_expressivity), seed, theta)
         if reason_expressivity == ReasonExpressivity.Features:
             reason = self.to_features_indexes(reason)
         reason = Explainer.format(reason)
@@ -431,3 +431,287 @@ class ExplainerBT(Explainer):
 #       abductive.remove(lit)
 #
 #   return Explainer.format(abductive)
+    def get_suppression_order(self, instance, th, strategy="priority_order", seed=None, ordre_features=None):
+        """
+        Returns the suppression order according to the chosen strategy.
+
+        Args:
+            instance: List of literals
+            th: Theory (clauses)
+            strategy: Suppression strategy to use
+            seed: Seed for the random strategy (optional)
+
+        Returns:
+            Ordered list of literals according to the strategy
+        """
+        if strategy == "priority_order":
+                chains_by_feature = self.get_feature_chain_lists_with_positive_first(th, instance)
+                priorityfeatures = self.merge_chains_and_instance(
+                    chains_by_feature, instance, ordre_features=ordre_features
+                )
+                return priorityfeatures
+
+        elif strategy == "beginning_to_end":
+            # Suppression from beginning to end (original order)
+            return list(instance)
+
+        elif strategy == "end_to_beginning":
+            # Suppression from end to beginning (reverse order)
+            return list(reversed(instance))
+
+        elif strategy == "random":
+            # Random suppression
+            random_order = list(instance)
+            if seed is not None:
+                random.seed(seed)
+            random.shuffle(random_order)
+            return random_order
+
+        else:
+            raise ValueError(f"Unknown strategy: {strategy}")
+
+
+    def get_feature_chain_lists_with_positive_first(self, th, instance):
+            """
+            For each feature, first builds the standard chain,
+            then reorders it to put inverted positives first.
+            """
+            # 1) Exact grouping as before
+            feature_groups = {}
+            for a, b in th:
+                cond = self.to_features((a,))[0].split()[0]
+                feature_groups.setdefault(cond, []).append((a, b))
+            result = {}
+            for feature, clauses in feature_groups.items():
+                chain = []
+                # Iterate over all clauses
+                for a, b in reversed(clauses):
+                    # Check XOR condition: exactly ONE of the two literals is in the instance
+                    a_in = a in instance
+                    b_in = b in instance
+                    # XOR: (a in instance AND b not in instance) OR (b in instance AND a not in instance)
+                    if (a_in and not b_in):
+                        # a is in the instance, add a and -b
+                        if -b not in chain:
+                            chain.append(-b)
+                        if a not in chain:
+                            chain.append(a)
+                    elif (b_in and not a_in):
+                        # b is in the instance, add b and -a
+                        if b not in chain:
+                            chain.append(b)
+                        if -a not in chain:
+                            chain.append(-a)
+                    # Otherwise, skip (implicit continue)
+
+                # 2) Reapply the desired order
+                if chain:  # Only if the chain is not empty
+                    result[feature] = self.reorder_chain(chain)
+
+            return result
+
+    def reorder_chain(self, chain):
+            """
+            Produces a new chain where:
+            - positives are taken first, reversed
+            - then negatives are added, in original order
+            """
+            positives = [x for x in chain if x > 0]
+            negatives = [x for x in chain if x < 0]
+            positives.reverse()
+            return positives + negatives
+
+    def merge_chains_and_instance(self, chains_by_feature, instance, ordre_features=None):
+            """
+            Returns a list of lists. Each sub-list contains the literals of one feature.
+            Example: [[-3, -19...], [-12, -18...]]
+            """
+            grouped_features = []
+
+            # 1. Determine the COMPLETE list of features to iterate over
+            features_prioritaires = list(ordre_features) if ordre_features else []
+            toutes_les_features = list(chains_by_feature.keys())
+            autres_features = [f for f in toutes_les_features if f not in features_prioritaires]
+
+            features_a_parcourir = features_prioritaires + autres_features
+
+            # 2. PRE-PROCESSING: Group instance literals by feature
+            instance_by_feature = {}
+            for lit in instance:
+                feature_full_name = self.to_features((lit,))[0]
+                feature_name = feature_full_name.split()[0]
+
+                if feature_name not in instance_by_feature:
+                    instance_by_feature[feature_name] = []
+                instance_by_feature[feature_name].append(lit)
+
+                if feature_name not in features_a_parcourir:
+                    features_a_parcourir.append(feature_name)
+
+            # 3. MAIN LOOP: Build the groups
+            processed_literals = set()
+
+            for feature in features_a_parcourir:
+                current_group = []
+
+                # A. Priority chains
+                if feature in chains_by_feature:
+                    chain = chains_by_feature[feature]
+                    for lit in chain:
+                        if lit not in processed_literals and lit in instance:
+                            current_group.append(lit)
+                            processed_literals.add(lit)
+
+                # B. Instance orphans for this feature
+                if feature in instance_by_feature:
+                    orphans = instance_by_feature[feature]
+                    for lit in orphans:
+                        if lit not in processed_literals:
+                            current_group.append(lit)
+                            processed_literals.add(lit)
+
+                # Add the group if it is not empty
+                if current_group:
+                    grouped_features.append(current_group)
+
+            # 4. SAFETY NET (for literals without an identified feature)
+            leftovers = []
+            for lit in instance:
+                if lit not in processed_literals:
+                    leftovers.append(lit)
+
+            if leftovers:
+                grouped_features.append(leftovers)
+
+            return grouped_features
+    def cpi_xp(self, *, n=1, strategy="priority_order", random_seed=42, ordre_features=None):
+        """
+        Implémentation de l'algorithme 1 (CPI-Xp) adaptée pour les Boosted Trees.
+
+        CHANGEMENT TECHNIQUE :
+        Au lieu d'un solveur SAT persistant (Glucose3), nous utilisons la classe
+        spécifique 'IsImplicantBT' pour vérifier la validité des implicants.
+        """
+
+        # --- 1. Initialisation & Théorie ---
+        # On récupère la théorie (contraintes du domaine/One-Hot Encoding)
+        # Note : Pour les BT, la théorie est souvent optionnelle ou structurelle
+        theory = tuple(self._boosted_trees.get_theory(self._binary_representation)) if self._theory else None
+        
+        # On convertit la théorie en liste de clauses pour 'get_suppression_order'
+        # (Si get_theory renvoie déjà des clauses, sinon adapter selon la librairie)
+        theory_clauses = list(theory) if theory else []
+
+        # Instance complète binaire (nécessaire pour IsImplicantBT)
+        binary_instance = list(self._binary_representation)
+
+        # --- 2. Détermination de l'ordre de suppression ---
+        # Ligne 6: t <- tx
+        # On utilise la même logique de tri que pour le RF
+        features_groups = self.get_suppression_order(
+            binary_instance, theory_clauses, strategy=strategy,
+            seed=random_seed if strategy == "random" else None, 
+            ordre_features=ordre_features
+        )
+
+        # Ligne 7: cx <- ensemble vide
+        cx = []
+
+        remaining_features_map = {i: group for i, group in enumerate(features_groups)}
+
+        # === Ligne 8: Pour chaque groupe de caractéristiques Ai ===
+        for i, t_prime in enumerate(features_groups):
+
+            # --- Détection du type de caractéristique ---
+            feature_type = "categorical"
+            if t_prime:
+                first_lit = t_prime[0]
+                feature_str = self.to_features((first_lit,))[0]
+                if ("in ]" in feature_str or "in [" in feature_str) or \
+                   any(op in feature_str for op in ['<', '>', '<=', '>=']):
+                    feature_type = "numeric"
+
+            # === Ligne 9: Tant que vrai ===
+            while True:
+                # Lignes 10–11 : Si t' est vide, on sort
+                if not t_prime:
+                    break
+
+                found = False  # Ligne 13
+
+                # Ligne 14: gs <- msg(t', Sigma)
+                gs = self.msg(t_prime, feature_type)
+
+                # Ligne 16: Pour chaque généralisation g dans gs
+                for g in gs:
+                    # Construction de l'hypothèse (cx + g + le reste des features non traitées)
+                    hypothesis = list(cx) + list(g)
+                    for j in range(i + 1, len(features_groups)):
+                        hypothesis.extend(remaining_features_map[j])
+
+                    # Ligne 18: Si imp(...)
+                    # MODIFICATION : On passe 'theory' et 'binary_instance' au lieu du solveur
+                    if self.imp(hypothesis, binary_instance, theory):
+                        t_prime = g     # Ligne 19
+                        found = True    # Ligne 20
+                        break           # Ligne 21
+
+                # Ligne 23: Si non trouvé
+                if not found:
+                    
+                    # --- OPTIMISATION : SAUT SYMÉTRIQUE (inchangé) ---
+                    if feature_type == "numeric":
+                        failed_literal = t_prime[0]
+                        # CAS 1: Bloqué sur un POSITIF -> chercher les NÉGATIFS
+                        if failed_literal > 0:
+                            pending_opposite = [x for x in t_prime if x < 0]
+                            if pending_opposite:
+                                cx.extend([x for x in t_prime if x > 0])
+                                t_prime = pending_opposite
+                                continue
+                        # CAS 2: Bloqué sur un NÉGATIF -> chercher les POSITIFS
+                        elif failed_literal < 0:
+                            pending_opposite = [x for x in t_prime if x > 0]
+                            if pending_opposite:
+                                cx.extend([x for x in t_prime if x < 0])
+                                t_prime = pending_opposite
+                                continue
+
+                    # Comportement standard
+                    cx.extend(t_prime)  # Ligne 24
+                    break               # Ligne 25
+
+        # Ligne 31: Retourner l'implicant final trié
+        return sorted(tuple(cx))
+
+    def msg(self, t_part, feature_type):
+            """
+            Implementation of msg (Most Specific Generalisation).
+            (Unchanged)
+            """
+            gs = []
+            if feature_type == "numeric":
+                if t_part:
+                    gs.append(t_part[1:])
+            else:
+                for k in range(len(t_part)):
+                    gs.append(t_part[:k] + t_part[k+1:])
+            return gs
+
+    def imp(self, hypothesis, binary_instance, theory):
+        """
+        Test d'implicant pour Boosted Trees.
+        Remplace l'appel SAT solver.solve().
+        """
+        # On instancie le vérificateur spécifique aux Boosted Trees
+        # Note: 'hypothesis' ici joue le rôle de l'implicant partiel qu'on teste
+        model = IsImplicantBT(
+            self._boosted_trees, 
+            binary_instance, 
+            hypothesis, 
+            self.target_prediction, 
+            theory
+        )
+        
+        # Renvoie True si l'hypothèse est un implicant valide (suffisant pour la prédiction)
+        return model.is_implicant()

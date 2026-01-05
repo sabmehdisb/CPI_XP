@@ -61,5 +61,5 @@ print(" Is Implicant ---------------------------------------------------")
 explanation = tree_specific 
 explanation_feature = explainer.to_features(explanation)
 print("explanation features:", explanation_feature)
-
+#print("")
 print("is implicant?:", explainer.is_implicant_BT(explanation))
