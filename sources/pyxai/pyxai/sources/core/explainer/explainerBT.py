@@ -11,7 +11,7 @@ from pyxai.sources.solvers.CSP.AbductiveV1 import AbductiveModelV1
 from pyxai.sources.solvers.CSP.TSMinimalV2 import TSMinimal
 from pyxai.sources.solvers.GRAPH.TreeDecomposition import TreeDecomposition
 from pyxai.sources.solvers.MIP.ContrastiveBT import ContrastiveBT
-
+from pyxai.sources.solvers.ORTOOLS.IsImplicantBT import IsImplicantBT
 
 class ExplainerBT(Explainer):
 
@@ -37,6 +37,22 @@ class ExplainerBT(Explainer):
     def _theory_clauses(self):
         return self._boosted_trees.get_theory(self._binary_representation)
 
+
+    def is_implicant_BT(self, implicant):
+
+        starting_time = -time.process_time()
+    
+        binary_instance = list(self._binary_representation).copy()
+        
+        theory = tuple(self._boosted_trees.get_theory(self._binary_representation)) if self._theory else None
+
+        model = IsImplicantBT(self._boosted_trees, binary_instance, implicant, self.target_prediction, theory)
+        
+        time_used = starting_time + time.process_time()
+        self._elapsed_time = time_used
+
+        return model.is_implicant()
+    
     def is_implicant(self, abductive):
 
         if self._boosted_trees.n_classes == 2:
@@ -265,7 +281,7 @@ class ExplainerBT(Explainer):
         reason = c_explainer.compute_reason(self.c_BT, self._binary_representation, self._implicant_id_features,
                                             self.target_prediction, n_iterations,
                                             time_limit,
-                                            int(reason_expressivity), seed, theta)
+                                            str(reason_expressivity), seed, theta)
         if reason_expressivity == ReasonExpressivity.Features:
             reason = self.to_features_indexes(reason)
         reason = Explainer.format(reason)
