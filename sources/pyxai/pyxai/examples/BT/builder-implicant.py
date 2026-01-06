@@ -11,12 +11,12 @@ node1_1 = Builder.DecisionNode(1, operator=Builder.GT, threshold=2, left=-0.2, r
 node1_2 = Builder.DecisionNode(3, operator=Builder.EQ, threshold=1, left=-0.3, right=node1_1)
 node1_3 = Builder.DecisionNode(2, operator=Builder.GT, threshold=1, left=0.4, right=node1_2)
 node1_4 = Builder.DecisionNode(4, operator=Builder.EQ, threshold=1, left=-0.5, right=node1_3)
-tree1 = Builder.DecisionTree(4, node1_4)
+tree1 = Builder.DecisionTree(4, node1_4,force_features_equal_to_binaries=True)
 
 node2_1 = Builder.DecisionNode(4, operator=Builder.EQ, threshold=1, left=-0.4, right=0.3)
 node2_2 = Builder.DecisionNode(1, operator=Builder.GT, threshold=2, left=-0.2, right=node2_1)
 node2_3 = Builder.DecisionNode(2, operator=Builder.GT, threshold=1, left=node2_2, right=0.5)
-tree2 = Builder.DecisionTree(4, node2_3)
+tree2 = Builder.DecisionTree(4, node2_3,force_features_equal_to_binaries=True)
 
 node3_1 = Builder.DecisionNode(1, operator=Builder.GT, threshold=2, left=0.2, right=0.3)
 
@@ -30,11 +30,11 @@ node3_3_2 = Builder.DecisionNode(2, operator=Builder.GT, threshold=1, left=-0.4,
 
 node3_4 = Builder.DecisionNode(3, operator=Builder.EQ, threshold=1, left=node3_3_1, right=node3_3_2)
 
-tree3 = Builder.DecisionTree(4, node3_4)
+tree3 = Builder.DecisionTree(4, node3_4,force_features_equal_to_binaries=True)
 
 BTs = Builder.BoostedTrees([tree1, tree2, tree3], n_classes=2)
 
-instance = (4, 3, 1, 1)
+instance = (4, 3, 2, -1)
 print("instance:", instance)
 
 explainer = Explainer.initialize(BTs, instance)
@@ -62,4 +62,4 @@ explanation = tree_specific
 explanation_feature = explainer.to_features(explanation)
 print("explanation features:", explanation_feature)
 #print("")
-print("is implicant?:", explainer.is_implicant_BT(explanation))
+print("is implicant?:", explainer.is_implicant_BT((-4,)))

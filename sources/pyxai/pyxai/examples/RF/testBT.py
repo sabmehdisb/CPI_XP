@@ -5,7 +5,7 @@ import pandas as pd
 from cpi_explaine_RF import *
 
 dataset_name = Tools.Options.dataset
-Tools.set_verbose(0)
+# Tools.set_verbose(0)
 
 df = pd.read_csv(dataset_name + '.csv')
 
@@ -38,15 +38,18 @@ ordre_features = []
 # reason2 = explainer.sufficient_general_reason_pure_sat(n=2)
 # reason2 = explainer.m_cpi_xp2(n=1, strategy="priority_order", random_seed=None, ordre_features=ordre_features)
 
-print("binarized instance", explainer.binary_representation)
+# print("binarized instance", explainer.binary_representation)
 
-tree_specific = explainer.tree_specific_reason()
-print("tree specific reason:", tree_specific)
+# tree_specific = explainer.tree_specific_reason()
+# print("tree specific reason:", tree_specific)
 
-print("tree specific reason:", tree_specific)
-print("is implicant?:", explainer.is_implicant_BT((31,)
-))
-exit(0)
+# print("tree specific reason:", tree_specific)
+# print("is implicant?:", explainer.is_implicant_BT((15,)
+                                                  
+# ))
+# print("target_prediction:", target_prediction)
+# print("instance", instance)
+# exit(0)
 reason2 = explainer.cpi_xp(
     n=1,
     strategy="priority_order",
@@ -68,7 +71,8 @@ features_original = explainer.to_features(reason2)
 print(f"CPI-Xp reason: {reason2}")
 print(f"CPI-Xp features: {features_original}")
 print("CPI-Xp rule size:", len(explainer.to_features(reason2)))
-
+print(f"Is a valid CPI-Xp reason: {explainer.is_reason(reason2)}")
+print("Is sufficient_reason CPI-Xp:", explainer.is_sufficient_reason(reason2, n_samples=1000))
 
 print("######################################################################")
 print("binarized instance", explainer.binary_representation)
