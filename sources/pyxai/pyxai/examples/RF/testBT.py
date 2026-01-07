@@ -14,7 +14,7 @@ learner = Learning.Xgboost(
     learner_type=Learning.CLASSIFICATION,
 )
 
-model = learner.evaluate(method=Learning.HOLD_OUT, output=Learning.BT,n_estimators=5)
+model = learner.evaluate(method=Learning.HOLD_OUT, output=Learning.BT)
 
 instance, prediction = learner.get_instances(model, n=1, correct=True)
 print("instance", instance)
