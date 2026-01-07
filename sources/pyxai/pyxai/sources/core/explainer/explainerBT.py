@@ -586,43 +586,43 @@ class ExplainerBT(Explainer):
             return grouped_features
     def cpi_xp(self, *, n=1, strategy="priority_order", random_seed=42, ordre_features=None):
         """
-        Implémentation de l'algorithme 1 (CPI-Xp) adaptée pour les Boosted Trees.
+        Implementation of Algorithm 1 (CPI-Xp) adapted for Boosted Trees.
 
-        CHANGEMENT TECHNIQUE :
-        Au lieu d'un solveur SAT persistant (Glucose3), nous utilisons la classe
-        spécifique 'IsImplicantBT' pour vérifier la validité des implicants.
+        TECHNICAL CHANGE:
+        Instead of a persistent SAT solver (Glucose3), we use the specific 
+        'IsImplicantBT' class to verify the validity of implicants.
         """
 
-        # --- 1. Initialisation & Théorie ---
-        # On récupère la théorie (contraintes du domaine/One-Hot Encoding)
-        # Note : Pour les BT, la théorie est souvent optionnelle ou structurelle
+        # --- 1. Initialization & Theory ---
+        # Retrieve the domain theory (domain constraints / One-Hot Encoding) [cite: 115]
+        # Note: For BT, theory is often optional or structural
         theory = tuple(self._boosted_trees.get_theory(self._binary_representation)) if self._theory else None
         
-        # On convertit la théorie en liste de clauses pour 'get_suppression_order'
-        # (Si get_theory renvoie déjà des clauses, sinon adapter selon la librairie)
+        # Convert theory into a list of clauses for 'get_suppression_order'
+        # (If get_theory already returns clauses, otherwise adapt based on the library)
         theory_clauses = list(theory) if theory else []
 
-        # Instance complète binaire (nécessaire pour IsImplicantBT)
+        # Complete binary instance (required for IsImplicantBT)
         binary_instance = list(self._binary_representation)
 
-        # --- 2. Détermination de l'ordre de suppression ---
-        # Ligne 6: t <- tx
-        # On utilise la même logique de tri que pour le RF
+        # --- 2. Determining the suppression order ---
+        # Line 6: t <- tx [cite: 143]
+        # Using the same sorting logic as for Random Forests (RF)
         features_groups = self.get_suppression_order(
             binary_instance, theory_clauses, strategy=strategy,
             seed=random_seed if strategy == "random" else None, 
             ordre_features=ordre_features
         )
 
-        # Ligne 7: cx <- ensemble vide
+        # Line 7: cx <- empty set [cite: 143]
         cx = []
 
         remaining_features_map = {i: group for i, group in enumerate(features_groups)}
 
-        # === Ligne 8: Pour chaque groupe de caractéristiques Ai ===
+        # === Line 8: For each feature group Ai ===
         for i, t_prime in enumerate(features_groups):
 
-            # --- Détection du type de caractéristique ---
+            # --- Feature Type Detection ---
             feature_type = "categorical"
             if t_prime:
                 first_lit = t_prime[0]
@@ -631,45 +631,45 @@ class ExplainerBT(Explainer):
                    any(op in feature_str for op in ['<', '>', '<=', '>=']):
                     feature_type = "numeric"
 
-            # === Ligne 9: Tant que vrai ===
+            # === Line 9: While true ===
             while True:
-                # Lignes 10–11 : Si t' est vide, on sort
+                # Lines 10–11: If t' is empty, exit loop [cite: 143]
                 if not t_prime:
                     break
 
-                found = False  # Ligne 13
+                found = False  # Line 13 [cite: 143]
 
-                # Ligne 14: gs <- msg(t', Sigma)
+                # Line 14: gs <- msg(t', Sigma) [cite: 143, 146]
                 gs = self.msg(t_prime, feature_type)
 
-                # Ligne 16: Pour chaque généralisation g dans gs
+                # Line 16: For each generalization g in gs [cite: 143]
                 for g in gs:
-                    # Construction de l'hypothèse (cx + g + le reste des features non traitées)
+                    # Build hypothesis (cx + g + remaining unprocessed features)
                     hypothesis = list(cx) + list(g)
                     for j in range(i + 1, len(features_groups)):
                         hypothesis.extend(remaining_features_map[j])
 
-                    # Ligne 18: Si imp(...)
-                    # MODIFICATION : On passe 'theory' et 'binary_instance' au lieu du solveur
+                    # Line 18: If imp(...) [cite: 143, 162]
+                    # MODIFICATION: Passing 'theory' and 'binary_instance' instead of the solver
                     if self.imp(hypothesis, binary_instance, theory):
-                        t_prime = g     # Ligne 19
-                        found = True    # Ligne 20
-                        break           # Ligne 21
+                        t_prime = g     # Line 19 [cite: 143]
+                        found = True    # Line 20 [cite: 143]
+                        break           # Line 21 [cite: 143]
 
-                # Ligne 23: Si non trouvé
+                # Line 23: If not found [cite: 143]
                 if not found:
                     
-                    # --- OPTIMISATION : SAUT SYMÉTRIQUE (inchangé) ---
+                    # --- OPTIMIZATION: SYMMETRIC JUMP (unchanged) ---
                     if feature_type == "numeric":
                         failed_literal = t_prime[0]
-                        # CAS 1: Bloqué sur un POSITIF -> chercher les NÉGATIFS
+                        # CASE 1: Blocked on a POSITIVE -> look for NEGATIVES
                         if failed_literal > 0:
                             pending_opposite = [x for x in t_prime if x < 0]
                             if pending_opposite:
                                 cx.extend([x for x in t_prime if x > 0])
                                 t_prime = pending_opposite
                                 continue
-                        # CAS 2: Bloqué sur un NÉGATIF -> chercher les POSITIFS
+                        # CASE 2: Blocked on a NEGATIVE -> look for POSITIVES
                         elif failed_literal < 0:
                             pending_opposite = [x for x in t_prime if x > 0]
                             if pending_opposite:
@@ -677,16 +677,16 @@ class ExplainerBT(Explainer):
                                 t_prime = pending_opposite
                                 continue
 
-                    # Comportement standard
-                    cx.extend(t_prime)  # Ligne 24
-                    break               # Ligne 25
+                    # Standard behavior
+                    cx.extend(t_prime)  # Line 24 [cite: 143]
+                    break               # Line 25 [cite: 143]
 
-        # Ligne 31: Retourner l'implicant final trié
+        # Line 31: Return the final sorted implicant [cite: 143]
         return sorted(tuple(cx))
 
     def msg(self, t_part, feature_type):
             """
-            Implementation of msg (Most Specific Generalisation).
+            Implementation of msg (Most Specific Generalisation)[cite: 146].
             (Unchanged)
             """
             gs = []
@@ -700,11 +700,11 @@ class ExplainerBT(Explainer):
 
     def imp(self, hypothesis, binary_instance, theory):
         """
-        Test d'implicant pour Boosted Trees.
-        Remplace l'appel SAT solver.solve().
+        Implicant test for Boosted Trees[cite: 162].
+        Replaces the SAT solver.solve() call.
         """
-        # On instancie le vérificateur spécifique aux Boosted Trees
-        # Note: 'hypothesis' ici joue le rôle de l'implicant partiel qu'on teste
+        # Instantiate the specific verifier for Boosted Trees
+        # Note: 'hypothesis' here acts as the partial implicant being tested
         model = IsImplicantBT(
             self._boosted_trees, 
             binary_instance, 
@@ -713,5 +713,44 @@ class ExplainerBT(Explainer):
             theory
         )
         
-        # Renvoie True si l'hypothèse est un implicant valide (suffisant pour la prédiction)
+        # Returns True if the hypothesis is a valid implicant (sufficient for the prediction) [cite: 89, 96]
         return model.is_implicant()
+
+    def m_cpi_xp(self, *, n=1, strategy="priority_order", random_seed=42, ordre_features=None):
+        """
+        Calculates a minimal explanation (mCPI-Xp) for Boosted Trees[cite: 102].
+        
+        This function reduces the initial CPI-Xp explanation by removing 
+        redundant literals one by one (greedy deletion).
+        """
+        # 1. Obtain the base explanation (CPI-Xp) [cite: 113]
+        cpi_explanation = list(
+            self.cpi_xp(n=n, strategy=strategy, 
+                        random_seed=random_seed, 
+                        ordre_features=ordre_features)
+        )
+
+        # 2. Prepare necessary elements for the BT implicant test
+        theory = tuple(self._boosted_trees.get_theory(self._binary_representation)) if self._theory else None
+        binary_instance = list(self._binary_representation)
+
+        # 3. Minimization loop (Greedy Deletion)
+        # Iterate over a copy of the list to allow modification
+        for literal in list(cpi_explanation):
+            
+            # Create a candidate by removing the current literal
+            candidate_explanation = [l for l in cpi_explanation if l != literal]
+            
+            # Check if the explanation remains valid without this literal
+            # Using the imp() function already defined for BT
+            is_valid_implicant = self.imp(candidate_explanation, binary_instance, theory)
+
+            if is_valid_implicant:
+                # If still an implicant, the literal was redundant
+                cpi_explanation.remove(literal)
+            else:
+                # Otherwise, the literal is necessary to guarantee the prediction
+                pass
+
+        # Return the sorted minimal explanation as a tuple [cite: 104]
+        return sorted(tuple(cpi_explanation))
