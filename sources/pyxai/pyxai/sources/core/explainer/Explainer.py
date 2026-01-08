@@ -445,7 +445,6 @@ class Explainer:
         for _ in range(n_samples):
             binary_representation = self.extend_reason_to_complete_representation(reason)
             if not self.is_implicant(binary_representation):
-                print("binary_representation",binary_representation)
                 return False
         return True
 

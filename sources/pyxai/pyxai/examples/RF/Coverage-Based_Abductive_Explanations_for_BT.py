@@ -21,7 +21,7 @@ from pyxai import Learning, Explainer, Tools
 
 # Import external functions (Assurez-vous d'avoir une version compatible BT ou générique)
 # Ici on adapte l'import pour refléter le changement de modèle
-from cpi_explaine_BT import findCPIexplanation_BT, cpi_xp_to_sat_format
+from cpi_explaine_BT import *
 
 # Disable PyXAI verbose output
 Tools.set_verbose(0)
@@ -37,7 +37,7 @@ if hasattr(signal, 'SIGALRM'):
 
 from multiprocessing import Process, Queue
 
-def run_with_timeout(func, args=(), kwargs=None, timeout_duration=300):
+def run_with_timeout(func, args=(), kwargs=None, timeout_duration=60):
     if kwargs is None: kwargs = {}
     
     # On utilise une Queue pour récupérer le résultat du processus enfant
@@ -114,7 +114,7 @@ def display_summary(report):
         sz_str = f"{s['mean_feature_size']:.2f} ± {s['std_feature_size']:.2f}" if s['mean_feature_size'] is not None else "N/A"
         print(f"{name:<30} {t_str:<25} {s['success_count']:<10} {s['timeout_count']:<12} {sz_str:<20}")
 
-def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=300):
+def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60):
     df = pd.read_csv(f"{dataset_name}.csv")
     dataset_stats = {"n_instances": int(df.shape[0]), "n_features": int(df.shape[1]) - 1}
 
@@ -152,14 +152,13 @@ def run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=300):
             
             # Methods definitions
             methods = {
-                "ext": lambda: findCPIexplanation_BT(binary_instance_set, list(theory_clauses)),
+                "ext": lambda: findCPIexplanation_BT(binary_instance_set, explainer),
                 "cpi": lambda: explainer.cpi_xp(n=1, strategy="priority_order"),
                 "mcpi": lambda: explainer.m_cpi_xp(n=1, strategy="priority_order"),
                 "sr": lambda: explainer.tree_specific_reason()
             }
             
             for key, func in methods.items():
-                print('time out')
                 res, duration, status = run_with_timeout(func, timeout_duration=timeout_sec)
                 # Conversion spécifique pour l'algo externe si succès
                 if key == "ext" and status == "Success":
@@ -193,7 +192,7 @@ def main():
     
     print(f"Starting BT experimental benchmark: {dataset_name_clean}")
     
-    results_log, dataset_stats, model_performance = run_experiment(dataset_name, n_instances=2, n_folds=10, timeout_sec=300)
+    results_log, dataset_stats, model_performance = run_experiment(dataset_name, n_instances=10, n_folds=10, timeout_sec=60)
     report = generate_summary(results_log, dataset_stats, model_performance, dataset_name_clean)
     
     output_file = f"{dataset_name_clean}_BT.json"

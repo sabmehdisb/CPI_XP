@@ -47,6 +47,7 @@ class IsImplicantBT():
         # Constraints 
         # Set the current_instance variables according to the implicant
         for lit in self.implicant:
+            # print("lit",lit)
             if lit > 0:
                 ct = solver.RowConstraint(1, 1)
                 ct.SetCoefficient(self.current_instance[lit], 1)
@@ -59,22 +60,24 @@ class IsImplicantBT():
         if self.theory is not None:
             # print("Adding theory constraints...")
             for clause in self.theory:
-                # nb_neg = sum([1 if l < 0 else 0 for l in clause])
-                # constraint = solver.RowConstraint(-solver.infinity(), 1 - nb_neg)
-                # for l in clause: 
-                #     constraint.SetCoefficient(self.current_instance[abs(l)], 1 if l > 0 else - 1)
-                if clause[0] < 0 and clause[1] < 0:
-                    # Categorial feature
-                    constraint = solver.RowConstraint(-solver.infinity(), 1)
-                    for l in clause:
-                        constraint.SetCoefficient(self.current_instance[abs(l)], 1)
-                elif clause[0] < 0 and clause[1] > 0:
-                    # Numerical feature
-                    constraint = solver.RowConstraint(0, solver.infinity())
-                    constraint.SetCoefficient(self.current_instance[abs(clause[0])], 1)
-                    constraint.SetCoefficient(self.current_instance[abs(clause[1])], -1)
-                else:   
-                    raise NotImplementedError("Not implemented yet for this kind of theory.")
+                nb_neg = sum([1 if l < 0 else 0 for l in clause])
+                constraint = solver.RowConstraint(1 - nb_neg,solver.infinity())
+                for l in clause: 
+                    constraint.SetCoefficient(self.current_instance[abs(l)], 1 if l > 0 else - 1)
+                # if clause[0] < 0 and clause[1] < 0:
+                #     print("categorique")
+                #     # Categorial feature
+                #     constraint = solver.RowConstraint(-solver.infinity(), 1)
+                #     for l in clause:
+                #         constraint.SetCoefficient(self.current_instance[abs(l)], 1)
+                # elif clause[0] < 0 and clause[1] > 0:
+                #     print("clause",clause)
+                #     # Numerical feature
+                #     constraint = solver.RowConstraint(-solver.infinity(), 0)
+                #     constraint.SetCoefficient(self.current_instance[abs(clause[0])], 1)
+                #     constraint.SetCoefficient(self.current_instance[abs(clause[1])], -1)
+                # else:   
+                #     raise NotImplementedError("Not implemented yet for this kind of theory.")
             
 
         for i in range(self.n_trees):
@@ -103,13 +106,13 @@ class IsImplicantBT():
                 #print("cube:", cube)
                 nb_neg = sum((1 for l in cube if l < 0))
                 nb_pos = sum((1 for l in cube if l > 0))
-                #ct3 = solver.RowConstraint(-solver.infinity(), nb_neg)
-                #ct3.SetCoefficient(self.leaf[i][j], nb_pos + nb_neg)
-                #for l in cube:
-                #   if l > 0:
-                #       ct3.SetCoefficient(self.current_instance[l], -1)
-                #   else:
-                #       ct3.SetCoefficient(self.current_instance[-l], 1)
+                ct3 = solver.RowConstraint(-solver.infinity(), nb_neg)
+                ct3.SetCoefficient(self.leaf[i][j], nb_pos + nb_neg)
+                for l in cube:
+                  if l > 0:
+                      ct3.SetCoefficient(self.current_instance[l], -1)
+                  else:
+                      ct3.SetCoefficient(self.current_instance[-l], 1)
 
                 ct3 = solver.RowConstraint(-solver.infinity(), nb_pos - 1)
                 ct3.SetCoefficient(self.leaf[i][j], -1)

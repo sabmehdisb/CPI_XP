@@ -87,6 +87,7 @@ print(f"CPI-Xp features: {features_original}")
 print("CPI-Xp rule size:", len(explainer.to_features(reason2)))
 print(f"Is a valid CPI-Xp reason: {explainer.is_reason(reason2)}")
 print("Is sufficient_reason CPI-Xp:", explainer.is_sufficient_reason(reason2, n_samples=1000))
+print("is implicant?:", explainer.is_implicant_BT(reason2))
 
 print("######################################################################")
 
@@ -96,6 +97,7 @@ print(f"mCPI-Xp features: {features_original}")
 print("mCPI-Xp rule size:", len(explainer.to_features(reason3)))
 print(f"Is a valid mCPI-Xp reason: {explainer.is_reason(reason3)}")
 print("Is sufficient_reason mCPI-Xp:", explainer.is_sufficient_reason(reason3, n_samples=1000))
+print("is implicant?:", explainer.is_implicant_BT(reason3))
 
 print("######################################################################")
 
@@ -105,6 +107,7 @@ print(f"CPI-Xp features: {features_original}")
 print("CPI-Xp rule size:", len(explainer.to_features(reason4)))
 print(f"Is a valid CPI-Xp reason: {explainer.is_reason(reason4)}")
 print("Is sufficient_reason CPI-Xp:", explainer.is_sufficient_reason(reason4, n_samples=1000))
+print("is implicant?:", explainer.is_implicant_BT(reason4))
 
 print("######################################################################")
 print("binarized instance", explainer.binary_representation)

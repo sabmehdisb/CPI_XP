@@ -5,7 +5,7 @@ import pandas as pd
 from cpi_explaine_BT import *
 
 dataset_name = Tools.Options.dataset
-Tools.set_verbose(0)
+# Tools.set_verbose(0)
 
 df = pd.read_csv(dataset_name + '.csv')
 
@@ -22,6 +22,7 @@ print("instance", instance)
 explainer = Explainer.initialize(
     model,
     instance,
+    features_type=dataset_name + '.types'
 )
 
 # th = explainer.get_theory()
@@ -33,17 +34,17 @@ v_binary = explainer.binary_representation
 x_frozenset = frozenset((abs(lit), 1 if lit > 0 else 0) for lit in v_binary)
 
 # 4. Calcul de l'explication CPI-Xp pour BT
-# print("Calcul de la CPI-Xp pour Boosted Trees...")
-# cpi_xp = findCPIexplanation_BT(x_frozenset, explainer)
-# print("cpi_xp",cpi_xp)
-# if cpi_xp:
-#     reason4 = cpi_xp_to_sat_format(cpi_xp)
-#     print("cpi_xp_sat:", reason4)
-# else:
-#     print("Aucune explication trouvée.")
-# print("################")
-# reason = explainer.tree_specific_reason()
+print("Calcul de la CPI-Xp pour Boosted Trees...")
+cpi_xp = findCPIexplanation_BT(x_frozenset, explainer)
+print("cpi_xp",cpi_xp)
+if cpi_xp:
+    reason4 = cpi_xp_to_sat_format(cpi_xp)
+    print("cpi_xp_sat:", reason4)
+else:
+    print("Aucune explication trouvée.")
+print("################")
 ordre_features = []
+reason = explainer.tree_specific_reason()
 
 # print("binarized instance", explainer.binary_representation)
 
@@ -67,15 +68,13 @@ reason3 = explainer.m_cpi_xp(n=1, strategy="priority_order", random_seed=None, o
 
 print("###############################################################")
 
-# features_original = explainer.to_features(reason)
-# print(f"Original PyXAI reason: {reason}")
-# print(f"PyXAI features: {features_original}")
-# print(f"Is a valid PyXAI reason: {explainer.is_reason(reason)}")
-# print("Is sufficient_reason PyXAI:", explainer.is_sufficient_reason(reason, n_samples=1000))
-# print("is implicant?:", explainer.is_implicant_BT(reason))
+features_original = explainer.to_features(reason)
+print(f"Original PyXAI reason: {reason}")
+print(f"PyXAI features: {features_original}")
+print(f"Is a valid PyXAI reason: {explainer.is_reason(reason)}")
+print("Is sufficient_reason PyXAI:", explainer.is_sufficient_reason(reason, n_samples=1000))
 
 print("###############################################################")
-bn=[-16, -14, 1, -2, -8, -5, 3, 12, 4, -6, -9, -15, 7, 11, -10, -13]
 
 # Generate 1 CPI-Xp explanation
 features_original = explainer.to_features(reason2)
@@ -83,12 +82,8 @@ print(f"CPI-Xp reason: {reason2}")
 print(f"CPI-Xp features: {features_original}")
 print("CPI-Xp rule size:", len(explainer.to_features(reason2)))
 print(f"Is a valid CPI-Xp reason: {explainer.is_reason(reason2)}")
-# print("Is sufficient_reason CPI-Xp:", explainer.is_sufficient_reason(reason2, n_samples=1000))
-print("is implicant?:", explainer.is_implicant_BT(reason2))
-print("target_prediction",target_prediction)
-print("prediction",prediction)
-print("is implicant?:", explainer.is_implicant_BT(bn))
-print("toto",explainer.get_model().predict_implicant(bn))
+print("Is sufficient_reason CPI-Xp:", explainer.is_sufficient_reason(reason2, n_samples=1000))
+
 print("###############################################################")
 
 features_original = explainer.to_features(reason3)
@@ -96,17 +91,15 @@ print(f"mCPI-Xp reason: {reason3}")
 print(f"mCPI-Xp features: {features_original}")
 print("mCPI-Xp rule size:", len(explainer.to_features(reason3)))
 print(f"Is a valid mCPI-Xp reason: {explainer.is_reason(reason3)}")
-# print("Is sufficient_reason mCPI-Xp:", explainer.is_sufficient_reason(reason3, n_samples=1000))
-print("is implicant?:", explainer.is_implicant_BT(reason3))
+print("Is sufficient_reason mCPI-Xp:", explainer.is_sufficient_reason(reason3, n_samples=1000))
 
 print("######################################################################")
-# features_original = explainer.to_features(reason4)
-# print(f"Reason from procedure CPI-Xp (Explanations of Classifiers under Constraints): {reason4}")
-# print(f"CPI-Xp features: {features_original}")
-# print("CPI-Xp rule size:", len(explainer.to_features(reason4)))
-# print(f"Is a valid CPI-Xp reason: {explainer.is_reason(reason4)}")
-# print("Is sufficient_reason CPI-Xp:", explainer.is_sufficient_reason(reason4, n_samples=1000))
-# print("is implicant?:", explainer.is_implicant_BT(reason4))
+features_original = explainer.to_features(reason4)
+print(f"Reason from procedure CPI-Xp (Explanations of Classifiers under Constraints): {reason4}")
+print(f"CPI-Xp features: {features_original}")
+print("CPI-Xp rule size:", len(explainer.to_features(reason4)))
+print(f"Is a valid CPI-Xp reason: {explainer.is_reason(reason4)}")
+print("Is sufficient_reason CPI-Xp:", explainer.is_sufficient_reason(reason4, n_samples=1000))
 
 print("######################################################################")
 

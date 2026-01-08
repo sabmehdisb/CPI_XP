@@ -112,6 +112,7 @@ class BoostedTrees(TreeEnsembles):
 
 
     def compute_probabilities_implicant(self, implicant):
+        print("test poids 1",[tree.take_decisions_binary_representation(implicant, self.map_features_to_id_binaries) for tree in self.forest])
         scores = numpy.asarray([tree.take_decisions_binary_representation(implicant, self.map_features_to_id_binaries) for tree in self.forest])
         return self.scores_to_probabilities(scores)
 
