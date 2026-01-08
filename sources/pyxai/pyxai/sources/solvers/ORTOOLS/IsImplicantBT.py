@@ -57,8 +57,12 @@ class IsImplicantBT():
         # Add the constraints for the theory
 # Add the constraints for the theory
         if self.theory is not None:
-            print("Adding theory constraints...")
+            # print("Adding theory constraints...")
             for clause in self.theory:
+                # nb_neg = sum([1 if l < 0 else 0 for l in clause])
+                # constraint = solver.RowConstraint(-solver.infinity(), 1 - nb_neg)
+                # for l in clause: 
+                #     constraint.SetCoefficient(self.current_instance[abs(l)], 1 if l > 0 else - 1)
                 if clause[0] < 0 and clause[1] < 0:
                     # Categorial feature
                     constraint = solver.RowConstraint(-solver.infinity(), 1)
@@ -67,10 +71,11 @@ class IsImplicantBT():
                 elif clause[0] < 0 and clause[1] > 0:
                     # Numerical feature
                     constraint = solver.RowConstraint(0, solver.infinity())
-                    constraint.SetCoefficient(self.current_instance[abs(clause[0])], -1)
-                    constraint.SetCoefficient(self.current_instance[abs(clause[1])], 1)
+                    constraint.SetCoefficient(self.current_instance[abs(clause[0])], 1)
+                    constraint.SetCoefficient(self.current_instance[abs(clause[1])], -1)
                 else:   
                     raise NotImplementedError("Not implemented yet for this kind of theory.")
+            
 
         for i in range(self.n_trees):
             #print("Tree ", i)
@@ -90,8 +95,8 @@ class IsImplicantBT():
             for j in range(len(self.leaves[i])):
                 leaf = self.leaves[i][j]
                 if leaf.parent is None:
-                    cts = solver.RowConstraint(self.leaves[i][j].value, self.leaves[i][j].value)
-                    cts.SetCoefficient(self.tree_weights[i], 1)
+                    cts= solver.RowConstraint(1, 1)
+                    cts.SetCoefficient(self.leaf[i][j], 1)
                     break
                 type_leaf = TypeLeaf.LEFT if leaf.parent.left == leaf else TypeLeaf.RIGHT
                 cube = self.trees[i].create_cube(leaf.parent, type_leaf)
@@ -123,14 +128,14 @@ class IsImplicantBT():
 
         if self.n_classes == 2:
             if self.target_prediction == 0:
-                ct5 = solver.RowConstraint(0, solver.infinity())
+                ct5 = solver.RowConstraint(0.000000000001, solver.infinity())
             else:
                 ct5 = solver.RowConstraint(-solver.infinity(), 0)
             ct5.SetCoefficient(self.forest_weight, 1)
         else:
             raise NotImplementedError("Not implemented yet for multi-class boosted trees.")
 
-        print(f"Solving with {solver.SolverVersion()}")
+        # print(f"Solving with {solver.SolverVersion()}")
         status = solver.Solve()
         
         if status == pywraplp.Solver.OPTIMAL:

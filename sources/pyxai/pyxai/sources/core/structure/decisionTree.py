@@ -458,7 +458,7 @@ class DecisionTree(BinaryMapping):
         return self._leaves
 
     def get_min_value(self):
-        print([l.value for l in self.get_leaves()])
+        # print([l.value for l in self.get_leaves()])
         return min([l.value for l in self.get_leaves()])
 
     def get_max_value(self):
