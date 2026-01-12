@@ -109,30 +109,30 @@ def generate_comparison_table(data_list):
         # --- Values ---
         ext_t = ext.get("mean_time_s")
         ext_to_val = ext.get("timeout_count", 0)
-        ext_sz = ext.get("mean_feature_size")
+        ext_sz = ext.get("mean_raw_size")
         
         cpi_t = cpi.get("mean_time_s")
         cpi_to_val = cpi.get("timeout_count", 0)
-        cpi_sz = cpi.get("mean_feature_size")
+        cpi_sz = cpi.get("mean_raw_size")
         
         # --- Time Formatting (Bold for best time) ---
         t_ext_str = format_time(ext_t)
         t_cpi_str = format_time(cpi_t)
         
-        if cpi_t is not None and ext_t is not None:
-            if cpi_t < ext_t:
-                t_ext_str = r"\textbf{" + t_ext_str + "}"
+        # if cpi_t is not None and ext_t is not None:
+        #     if cpi_t < ext_t:
+        #         t_ext_str = r"\textbf{" + t_ext_str + "}"
 
         # --- Timeout Formatting (Bold if > 0) ---
         # External
         to_ext_str = f"{int(ext_to_val)}" if ext_to_val == int(ext_to_val) else f"{ext_to_val:.1f}"
-        if ext_to_val > 0:
-            to_ext_str = r"\textbf{" + to_ext_str + "}"
+        # if ext_to_val > 0:
+        #     to_ext_str = r"\textbf{" + to_ext_str + "}"
             
         # PyXAI
         to_cpi_str = f"{int(cpi_to_val)}" if cpi_to_val == int(cpi_to_val) else f"{cpi_to_val:.1f}"
-        if cpi_to_val > 0:
-            to_cpi_str = r"\textbf{" + to_cpi_str + "}"
+        # if cpi_to_val > 0:
+        #     to_cpi_str = r"\textbf{" + to_cpi_str + "}"
 
         # --- Size Formatting ---
         sz_ext_str = format_float(ext_sz, 1)
