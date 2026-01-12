@@ -109,11 +109,11 @@ def generate_comparison_table(data_list):
         # --- Values ---
         ext_t = ext.get("mean_time_s")
         ext_to_val = ext.get("timeout_count", 0)
-        ext_sz = ext.get("mean_raw_size")
+        ext_sz = ext.get("mean_feature_size")
         
         cpi_t = cpi.get("mean_time_s")
         cpi_to_val = cpi.get("timeout_count", 0)
-        cpi_sz = cpi.get("mean_raw_size")
+        cpi_sz = cpi.get("mean_feature_size")
         
         # --- Time Formatting (Bold for best time) ---
         t_ext_str = format_time(ext_t)
