@@ -43,25 +43,32 @@
     <h2>Contents</h2>
     <p>This archive contains the following resources:</p>
     <ul>
+      <li><strong><code>proofs.pdf</code></strong>: Detailed proofs for all propositions presented in the paper.</li>
       <li><strong><code>sources</code></strong>: The source code is built on the basis of a GIT clone of <a href="https://github.com/crillab/pyxai" target="_blank">https://github.com/crillab/pyxai</a>.
         
         <p><strong>1. Implementation of Our Approach:</strong></p>
-        <p>The core logic of our Coverage-Based Abductive Explanations is implemented in the following files:</p>
-        <ul>
-            <li>For Decision Trees: <code>sources/pyxai/pyxai/sources/core/explainer/explainerDT.py</code></li>
-            <li>For Random Forests: <code>sources/pyxai/pyxai/sources/core/explainer/explainerRF.py</code></li>
-        </ul>
+        <p>The core logic of our Coverage-Based Prime Implicant Explanations for Tree-Based Models is implemented in the following files:</p>
+    <ul>
+        <li>For Decision Trees: <code>sources/pyxai/pyxai/sources/core/explainer/explainerDT.py</code></li>
+        <li>For Random Forests: <code>sources/pyxai/pyxai/sources/core/explainer/explainerRF.py</code></li>
+        <li>For Boosted Trees: 
+            <ul>
+                <li>Explainer: <code>sources/pyxai/pyxai/sources/core/explainer/explainerBT.py</code></li>
+                <li>Implicant test (MIP-based): <code>sources/pyxai/pyxai/sources/solvers/ORTOOLS/IsImplicantBT.py</code></li>
+            </ul>
+        </li>
+    </ul>
 
         <p><strong>2. Experimental Scripts (Comparison):</strong></p>
         <p>Located in <code>sources/pyxai/pyxai/examples/RF/</code>, these scripts run the experiments comparing our approach against the state-of-the-art algorithm (Martin Cooper and Leila Amgoud):</p>
         <ul>
           <li><code>Coverage-Based_Abductive_Explanations_for_DT.py</code>: Main script to run the comparison for Decision Trees.</li>
           <li><code>Coverage-Based_Abductive_Explanations_for_RF.py</code>: Main script to run the comparison for Random Forests.</li>
-          <li><code>cpi_explaine_DT.py</code> and <code>cpi_explaine_RF.py</code>: Modules containing the implementation of the baseline algorithm (Cooper & Amgoud), imported by the main scripts.</li>
-          <li><code>run_all_coverage_DT.py</code> and <code>run_all_coverage_RF.py</code>: Scripts to batch execute the experiments on all datasets.</li>
+          <li><code>Coverage-Based_Abductive_Explanations_for_BT.py</code>: Main script to run the comparison for Boosted Trees.</li>
+          <li><code>cpi_explaine_DT.py</code>, <code>cpi_explaine_RF.py</code> and <code>cpi_explaine_BT.py</code>: Modules containing the implementation of the baseline algorithm (Cooper & Amgoud), imported by the main scripts.</li>
+          <li><code>run_all_coverage_DT.py</code>, <code>run_all_coverage_RF.py</code> and <code>run_all_coverage_BT.py</code>: Scripts to batch execute the experiments on all datasets.</li>
         </ul>
       </li>
-      
       <li><strong><code>dataset</code></strong>: The datasets converted and used in our experiments.
         <p>More specifically, for each dataset, you can find:</p>
         <ul>
@@ -74,7 +81,8 @@
         <ul>
           <li><code>logs/cpi_xp_log_dt/</code>: Results obtained for Decision Trees experiments.</li>
           <li><code>logs/cpi_xp_log_rf/</code>: Results obtained for Random Forests experiments.</li>
-          <li><code>logs/gen_latex_tables.py</code>: Python code to generate LaTeX tables (Table 1 and Table 2) from the JSON logs.
+          <li><code>logs/cpi_xp_log_bt/</code>: Results obtained for Boosted Trees experiments.</li>
+          <li><code>logs/gen_latex_tables.py</code>: Python script to process JSON logs and automatically generate the LaTeX performance tables (Tables 2, 3, and 4) for the DT, RF, and BT models.</li>
             <p>Execution commands (requires the path to the logs directory):</p>
             
             <p>For Decision Trees logs:</p>
@@ -82,6 +90,8 @@
             
             <p>For Random Forests logs:</p>
             <div class="command"><code>python3 logs/gen_latex_tables.py --path=logs/cpi_xp_log_rf/</code></div>
+            <p>For Boosted Trees logs:</p>
+            <div class="command"><code>python3 logs/gen_latex_tables.py --path=logs/cpi_xp_log_bt/</code></div>
           </li>
         </ul>
       </li>
@@ -111,7 +121,7 @@
       
     <h2>How to Run the Experiments</h2>
     <ul>
-      <li>For a given dataset, the specific scripts <code>Coverage-Based_Abductive_Explanations_for_DT.py</code> and <code>Coverage-Based_Abductive_Explanations_for_RF.py</code> located in <code>sources/pyxai/pyxai/examples/RF/</code> execute the comparison between our approach and the baseline.</li>
+      <li>For a given dataset, the specific scripts <code>Coverage-Based_Abductive_Explanations_for_DT.py</code>, <code>Coverage-Based_Abductive_Explanations_for_RF.py</code> and <code>Coverage-Based_Abductive_Explanations_for_BT.py</code> located in <code>sources/pyxai/pyxai/examples/RF/</code> execute the comparison between our approach and the baseline.</li>
       
       <li><strong>Running the comparison (Our Approach vs. Cooper & Amgoud):</strong>
         <p>These scripts execute both algorithms and log the results.</p>
@@ -125,7 +135,10 @@
         <div class="command">
           <code>python3 sources/pyxai/pyxai/examples/RF/Coverage-Based_Abductive_Explanations_for_RF.py -dataset="../../../../../datasets/breastTumor"</code>
         </div>
-        
+        <p>For Boosted Trees (BT):</p>
+        <div class="command">
+          <code>python3 sources/pyxai/pyxai/examples/RF/Coverage-Based_Abductive_Explanations_for_BT.py -dataset="../../../../../datasets/breastTumor"</code>
+        </div>
         <p>Note: Only the dataset name (with the directory) needs to be specified in the <code>-dataset</code> parameter.</p>
       </li>
       
@@ -138,6 +151,10 @@
         <p>For Random Forests:</p>
         <div class="command">
           <code>python3 sources/pyxai/pyxai/examples/RF/run_all_coverage_RF.py</code>
+        </div>
+        <p>For Boosted Trees:</p>
+        <div class="command">
+          <code>python3 sources/pyxai/pyxai/examples/RF/run_all_coverage_BT.py</code>
         </div>
       </li>
     </ul>
