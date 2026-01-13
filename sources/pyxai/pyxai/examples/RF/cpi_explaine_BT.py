@@ -2,64 +2,70 @@ from pysat.solvers import Glucose3
 from pyxai.sources.solvers.ORTOOLS.IsImplicantBT import IsImplicantBT
 import pandas as pd
 
-# =================== 1. Test de Subsomption (implies_BT) ===================
-from pysat.solvers import Glucose3
-
 # ===================== Utilities =====================
+
 def literal_to_sat(literal):
-    """Convertit (var, value) en littéral SAT : (1,1)->1, (1,0)->-1"""
+    """
+    Converts a (var, value) tuple to a SAT literal:
+    Example: (1, 1) -> 1, (1, 0) -> -1
+    """
     return literal[0] if literal[1] == 1 else -literal[0]
+
 def cpi_xp_to_sat_format(cpi_xp):
-    """Convert frozenset({(1, 0), (5, 1)}) into tuple (-1, 5)"""
+    """
+    Converts a frozenset({(1, 0), (5, 1)}) into a tuple (-1, 5)
+    """
     sat_list = []
     for var, value in sorted(cpi_xp, key=lambda x: x[0]):
         sat_list.append(var if value == 1 else -var)
     return tuple(sat_list)
-# =================== 1. Test de Subsomption (SAT) ===================
+
+# =================== 1. Subsumption Test (implies_BT) ===================
+
 def implies_BT(A, B, solver_subsumption):
     """
-    Vérifie si A implique B sous les contraintes de la théorie Sigma.
-    Note : solver_subsumption doit être une instance de Glucose3.
+    Checks if set A implies set B under the constraints of domain theory Sigma.
+    Note: solver_subsumption must be an instance of Glucose3.
     """
     if not B:
         return True
 
-    # Hypothèse de base : tout ce qui est dans A (format SAT)
+    # Base assumptions: all literals in A (converted to SAT format)
     base_assumptions = [literal_to_sat(lit) for lit in A]
 
     for lit in B:
-        # Test : A et Sigma => lit  <=> (A et Sigma et non-lit) est UNSAT
+        # Logical test: A and Sigma => lit <=> (A and Sigma and not-lit) is UNSAT
         lit_sat = literal_to_sat(lit)
         
-        # Si le solveur trouve une solution (SAT) avec non-lit, 
-        # alors A n'implique pas b_lit.
+        # If the solver finds a solution (SAT) with not-lit, 
+        # then A does not imply b_lit.
         if solver_subsumption.solve(assumptions=base_assumptions + [-lit_sat]):
             return False
 
     return True
 
-# =================== 2. Recherche de Contre-Exemple (Récursif) ===================
+# =================== 2. Counter-Example Search (Recursive) ===================
+
 def CPIexplanation_BT(E, infL, supL, explainer, solver_subsumption):
     """
-    Recherche récursive. 
-    L'argument 'explainer' sert pour le modèle BT.
-    L'argument 'solver_subsumption' sert pour la théorie SAT.
+    Recursive search for a counter-example.
+    'explainer' is used for the BT model (MIP-based).
+    'solver_subsumption' is used for the SAT theory (logical consistency).
     """
     
-    # 1. Validité du Modèle : Appel à votre méthode is_implicant_BT
-    # On convertit supL en liste de littéraux signés pour votre méthode
+    # 1. Model Validity: Call to the custom BT implicant method
+    # supL is converted to a list of signed literals for the explainer
     supL_list = [literal_to_sat(lit) for lit in supL]
     if not explainer.is_implicant_BT(supL_list):
         return (True, None)
 
-    # 2. Subsomption (Généralité) : Via le solveur SAT
-    # ATTENTION : On passe bien 'solver_subsumption' ici
+    # 2. Subsumption (Generality): Using the SAT solver
     if not implies_BT(supL, E, solver_subsumption):
         return (False, supL)
 
-    # Exploration
+    # Search Exploration
     for lit in (supL - infL):
-        # ATTENTION : On passe bien les 5 arguments dans l'appel récursif
+        # Recursive call passing all 5 required arguments
         res, counterE = CPIexplanation_BT(E, infL, supL - {lit}, explainer, solver_subsumption)
         if not res:
             return (res, counterE)
@@ -67,38 +73,40 @@ def CPIexplanation_BT(E, infL, supL, explainer, solver_subsumption):
 
     return (True, None)
 
-# =================== 3. Algorithme Principal ===================
+# =================== 3. Main Algorithm ===================
+
 def findCPIexplanation_BT(v, explainer):
     """
-    Calcule la CPI-Xp pour les Boosted Trees.
-    v : instance complète (frozenset de tuples)
+    Computes the CPI-Xp for Boosted Trees.
+    v: complete instance (frozenset of tuples)
     """
     E = frozenset(v)
     
-    # Récupération des clauses de la théorie du domaine
+    # Retrieve domain theory clauses (Sigma)
     theory_clauses = list(explainer._boosted_trees.get_theory(explainer._binary_representation))
     
-    # Initialisation du solveur SAT uniquement pour la théorie
+    # Initialize SAT solver for the domain theory only
     with Glucose3() as solver_subsumption:
         for cl in theory_clauses:
             solver_subsumption.add_clause(list(cl))
 
         while True:
-            # Calcul de L (Clôture de E)
+            # Step 1: Compute L (Closure of E)
             L = set(E)
             for lit in (v - E):
-                # On passe bien le solveur SAT
+                # Pass the SAT solver to verify implications
                 if implies_BT(E, frozenset({lit}), solver_subsumption):
                     L.add(lit)
             L = frozenset(L)
 
-            # Recherche de contre-exemple
-            # /!\ BIEN PASSER LES 5 ARGUMENTS ICI /!\
+            # Step 2: Search for a counter-example
+            # Ensure all 5 arguments are passed correctly
             res, counterE = CPIexplanation_BT(E, frozenset(), L, explainer, solver_subsumption)
 
             if res:
-                return E # E est une CPI-Xp
+                return E # E is a valid CPI-Xp
             else:
                 E = frozenset(counterE)
-                if len(E) == 0: break
+                if len(E) == 0: 
+                    break
     return None
