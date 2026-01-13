@@ -89,7 +89,7 @@ def generate_comparison_table(data_list):
     latex.append(r"\toprule")
     
     # Grouped headers with cmidrule
-    latex.append(r"& \multicolumn{3}{c}{\textbf{Cooper-Amgoud}} & \multicolumn{3}{c}{\textbf{CPI-XP-TBM} \\")
+    latex.append(r"& \multicolumn{3}{c}{\textbf{Cooper-Amgoud}} & \multicolumn{3}{c}{\textbf{CPI-XP-TBM}} \\")
     latex.append(r"\cmidrule(lr){2-4} \cmidrule(lr){5-7}")
     
     latex.append(r"\textbf{Dataset} & \textbf{Time} & \textbf{TO\%} & \textbf{Sz} & \textbf{Time} & \textbf{TO\%} & \textbf{Sz} \\")
