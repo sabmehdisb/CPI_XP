@@ -218,7 +218,7 @@ def main():
     
     print(f"Starting BT experimental benchmark: {dataset_name}")
     
-    results_log, dataset_stats, model_performance = run_experiment(dataset_path, n_instances=2, n_folds=10, timeout_sec=60)
+    results_log, dataset_stats, model_performance = run_experiment(dataset_path, n_instances=10, n_folds=10, timeout_sec=60)
     report = generate_summary(results_log, dataset_stats, model_performance, dataset_name)
     
     output_file = f"{dataset_name}_BT.json"
