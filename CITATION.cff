@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the following metadata."
+title: "Computing Coverage-Based Prime Implicant Explanations for Tree-Based Models"
+authors:
+  - family-names: "Audemard"
+    given-names: "Gilles"
+    orcid: "https://orcid.org/0000-0003-2604-9657"
+  - family-names: "Coste-Marquis"
+    given-names: "Sylvie"
+    orcid: "https://orcid.org/0000-0003-4742-4858"
+  - family-names: "Marquis"
+    given-names: "Pierre"
+    orcid: "https://orcid.org/0000-0002-7979-6608"
+  - family-names: "Sabiri"
+    given-names: "Mehdi"
+    orcid: "https://orcid.org/0009-0003-8642-9755"
+  - family-names: "Szczepanski"
+    given-names: "Nicolas"
+    orcid: "https://orcid.org/0000-0001-7553-5657"
+version: "1.0.0"
+doi: ""  # Ajoute un DOI si disponible
+date-released: "2026-05-02"
