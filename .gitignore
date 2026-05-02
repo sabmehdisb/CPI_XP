@@ -1,0 +1,23 @@
+# Python compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Temporary and local files
+*.tmp
+*.swp
+*.bak
+
+# Output or generated folders
+outputs/
+tmp/
+
+# IDE / editor local settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# MacOS
+.DS_Store
